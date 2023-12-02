@@ -84,6 +84,11 @@ const d3Setup = (data: SoilSisters[]) => {
     //   d3.select(this.parentNode).select('text').attr('opacity', 0)
     // })
 
+  // watch for window resize and update the svg size
+  window.addEventListener('resize', () => {
+    svg.attr('width', window.innerWidth).attr('height', window.innerHeight)
+  })
+
   const container = document.getElementById('container') as HTMLElement
   container.append(svg.node() as Node)
 }
@@ -91,6 +96,10 @@ const d3Setup = (data: SoilSisters[]) => {
 onMounted(() => {
   d3Setup(store.data)
 })
+
+
+
+
 
 watch(
   () => store.data,
