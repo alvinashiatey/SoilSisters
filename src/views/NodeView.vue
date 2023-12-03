@@ -120,74 +120,51 @@ function transformDataToNetwork(data: DataItem[]): NetworkData {
     links: Link[] = []
 
   data.forEach((item) => {
-    let lastModifier = ''
-    let directLinkFromModifierToOutput = false
+    const fabricationMethod = item['Fabrication Method ']
+    const outputName = item['Output Name']
 
-    // Process each ingredient
     for (let i = 1; i <= 4; i++) {
       const ingredientName = item[`Ingredient ${i} Name`]
       const modifierName = item[`Modifier Method ${i}`]
 
       if (ingredientName) {
-        nodes.push({ id: ingredientName, type: 'ingredient', x: 0,
-          y: 0 })
+        nodes.push({ id: ingredientName, type: 'ingredient' })
 
         if (modifierName) {
-          links.push({
-            source: ingredientName,
-            target: modifierName,
-            x: 0,
-            y: 0
-          })
+          links.push({ source: ingredientName, target: modifierName })
           nodes.push({ id: modifierName, type: 'modifier' })
-          lastModifier = modifierName
-        } else if (item['Fabrication Method ']) {
-          // Direct link from ingredient to fabrication method
-          links.push({
-            source: ingredientName,
-            target: item['Fabrication Method '],
-            x: 0,
-            y: 0
-          })
+
+          if (fabricationMethod) {
+            links.push({ source: modifierName, target: fabricationMethod })
+          }
+        } else if (fabricationMethod) {
+          links.push({ source: ingredientName, target: fabricationMethod })
         }
       }
     }
 
-    const fabricationMethod = item['Fabrication Method ']
+    // Handle fabrication method node
     if (fabricationMethod) {
       nodes.push({ id: fabricationMethod, type: 'fabrication' })
-      if (lastModifier) {
-        links.push({
-          source: lastModifier,
-          target: fabricationMethod,
-          x: 0,
-          y: 0
-        })
-      } else {
-        // Flag to indicate direct link from last modifier to output
-        directLinkFromModifierToOutput = true
-      }
     }
 
-    const outputName = item['Output Name']
+    // Handle output node and its link
     if (outputName) {
       nodes.push({ id: outputName, type: 'output' })
 
-      if (fabricationMethod) {
-        links.push({
-          source: fabricationMethod,
-          target: outputName,
-          x: 0,
-          y: 0
-        })
-      } else if (directLinkFromModifierToOutput && lastModifier) {
-        // Direct link from last modifier to output
-        links.push({
-          source: lastModifier,
-          target: outputName,
-          x: 0,
-          y: 0
-        })
+      // Determine the source for the link to the output
+      const sourceForOutput =
+        fabricationMethod ||
+        item['Modifier Method 4'] ||
+        item['Modifier Method 3'] ||
+        item['Modifier Method 2'] ||
+        item['Modifier Method 1'] ||
+        item['Ingredient 1 Name'] ||
+        item['Ingredient 2 Name'] ||
+        item['Ingredient 3 Name'] ||
+        item['Ingredient 4 Name']
+      if (sourceForOutput) {
+        links.push({ source: sourceForOutput, target: outputName })
       }
     }
   })
@@ -222,43 +199,56 @@ const d3Setup = (networkData: NetworkData) => {
 
   svg.call(zoom as any)
 
-  const simulation = d3.forceSimulation(networkData.nodes as any)
-    .force('link', d3.forceLink(networkData.links).id(d => d.id))
+  const simulation = d3
+    .forceSimulation(networkData.nodes as any)
+    .force(
+      'link',
+      d3.forceLink(networkData.links).id((d) => d.id)
+    )
     .force('charge', d3.forceManyBody().strength(-50))
     .force('center', d3.forceCenter(width / 2, height / 2))
     .force('collision', d3.forceCollide().radius(35))
     .on('tick', () => {
       // Update node positions
-      nodeGroups.attr('transform', d => `translate(${d.x},${d.y})`);
+      nodeGroups.attr('transform', (d) => `translate(${d.x},${d.y})`)
 
       // Update link (path) positions
-      link.attr('d', d => {
+      link.attr('d', (d) => {
         const sx = d.source.x,
           sy = d.source.y,
           tx = d.target.x,
-          ty = d.target.y;
+          ty = d.target.y
         const dx = tx - sx,
           dy = ty - sy,
-          dr = Math.sqrt(dx * dx + dy * dy); // Radius for the curve
-        return `M${sx},${sy}A${dr},${dr} 0 0,1 ${tx},${ty}`;
-      });
-    });
-
-
+          dr = Math.sqrt(dx * dx + dy * dy) // Radius for the curve
+        return `M${sx},${sy}A${dr},${dr} 0 0,1 ${tx},${ty}`
+      })
+    })
 
   const link = g
     .selectAll('.link')
     .data(networkData.links)
     .join('path')
     .classed('link', true)
-    .style('stroke', '#AEC3AE')
-    .style('stroke-width', 1)
+    .style('stroke', (d) => {
+      if (d.source.type === 'output') {
+        return '#DE8F5F'
+      } else if (d.source.type === 'fabrication') {
+        return '#FFC436'
+      } else if (d.source.type === 'modifier') {
+        return '#940B92'
+      } else if (d.source.type === 'ingredient') {
+        return '#AEC3AE'
+      }
+      return '#AEC3AE'
+    })
+    .style('stroke-width', 2)
     .style('fill', 'none')
     .attr('d', (d) => {
-      const sx = d.x,
-        sy = d.y,
-        tx = d.x,
-        ty = d.y
+      const sx = d.source.x,
+        sy = d.source.y,
+        tx = d.target.x,
+        ty = d.target.y
       const dx = tx - sx,
         dy = ty - sy,
         dr = Math.sqrt(dx * dx + dy * dy)
@@ -271,7 +261,18 @@ const d3Setup = (networkData: NetworkData) => {
   nodeGroups
     .append('circle')
     .attr('r', 5)
-    .attr('fill', (_, i) => (i === 0 ? '#94A684' : '#AEC3AE'))
+    .attr('fill', (d) => {
+      if (d.type === 'output') {
+        return '#DE8F5F'
+      } else if (d.type === 'fabrication') {
+        return '#FFC436'
+      } else if (d.type === 'modifier') {
+        return '#940B92'
+      } else if (d.type === 'ingredient') {
+        return '#AEC3AE'
+      }
+      return '#AEC3AE'
+    }) // Orange for output nodes
     .attr('cy', 0)
     .attr('cx', 0)
     .attr('cursor', 'pointer')
@@ -285,20 +286,30 @@ const d3Setup = (networkData: NetworkData) => {
     .append('text')
     .text((d) => d.id)
     .attr('text-anchor', 'middle')
-    .attr('fill', (_, i) => (i === 0 ? '#94A684' : '#E4E4D0'))
+    .attr('fill', (d) => {
+      if (d.type === 'output') {
+        return '#DE8F5F'
+      } else if (d.type === 'fabrication') {
+        return '#FFC436'
+      } else if (d.type === 'modifier') {
+        return '#940B92'
+      } else if (d.type === 'ingredient') {
+        return '#AEC3AE'
+      }
+      return '#AEC3AE'
+    })
     .attr('font-size', 12)
     .attr('font-weight', 'bold')
     .attr('pointer-events', 'none')
     .attr('alignment-baseline', 'middle')
     .attr('x', 0)
     .attr('y', 15)
-
-
 }
 
 onMounted(() => {
   const r = setUpData(getOutputs(store.data))
   const n = transformDataToNetwork(getOutputs(store.data) as any)
+  console.log(n)
   if (!r) return
   d3Setup(n)
 })
