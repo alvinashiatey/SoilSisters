@@ -232,15 +232,15 @@ const d3Setup = (networkData: NetworkData) => {
     .classed('link', true)
     .style('stroke', (d) => {
       if (d.source.type === 'output') {
-        return '#DE8F5F'
+        return '#DE8F5F33'
       } else if (d.source.type === 'fabrication') {
-        return '#FFC436'
+        return '#FFC43633'
       } else if (d.source.type === 'modifier') {
-        return '#940B92'
+        return '#940B9233'
       } else if (d.source.type === 'ingredient') {
-        return '#AEC3AE'
+        return '#AEC3AE33'
       }
-      return '#AEC3AE'
+      return '#AEC3AE33'
     })
     .style('stroke-width', 2)
     .style('fill', 'none')
