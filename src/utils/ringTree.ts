@@ -82,7 +82,8 @@ const ringTree = (networkData: NetworkData, container: HTMLElement | null, route
     link.target = networkData.nodes.find((node) => node.id === link.target) as Node
   })
   // Add links
-  g.selectAll('.link')
+  const links = g
+    .selectAll('.link')
     .data(networkData.links)
     .join('path')
     .classed('link', true)
@@ -162,6 +163,38 @@ const ringTree = (networkData: NetworkData, container: HTMLElement | null, route
       const params = { name: d.id }
       if (params.name === '' || !params.name) return
       router.push({ name: 'node', params })
+    })
+    .on('mouseover', (event, d) => {
+      // Highlight links where this node is either source or target
+      links.style('stroke', (linkData) => {
+        if (linkData.source.id === d.id || linkData.target.id === d.id) {
+          if (linkData.source.type === 'output') {
+            return '#DE8F5F'
+          } else if (linkData.source.type === 'fabrication') {
+            return '#FFC436'
+          } else if (linkData.source.type === 'modifier') {
+            return '#940B92'
+          } else if (linkData.source.type === 'ingredient') {
+            return '#AEC3AE'
+          }
+          return '#AEC3AE'
+        }
+        return '#AEC3AE33'
+      })
+    })
+    .on('mouseout', () => {
+      links.style('stroke', (d) => {
+        if (d.source.type === 'output') {
+          return '#FFF4DA'
+        } else if (d.source.type === 'fabrication') {
+          return '#FFF4DA'
+        } else if (d.source.type === 'modifier') {
+          return '#FCF9FC'
+        } else if (d.source.type === 'ingredient') {
+          return '#EFF3EF'
+        }
+        return '#AEC3AE33'
+      })
     })
 
   nodeGroups
