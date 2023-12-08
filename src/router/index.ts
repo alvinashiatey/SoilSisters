@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import NodeView from "@/views/NodeView.vue";
+import NodeView from '@/views/NodeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,12 +18,12 @@ const router = createRouter({
     //   // which is lazy-loaded when the route is visited.
     //   component: () => import('../views/AboutView.vue')
     // }
-  //   dynamic route
+    //   dynamic route
     {
       path: '/node/:name',
       name: 'node',
       component: NodeView,
-      props: true,
+      props: true
     }
   ]
 })

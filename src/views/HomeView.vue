@@ -12,7 +12,8 @@ const router = useRouter()
 
 const d3Setup = (data: SoilSisters[]) => {
   const root = d3.hierarchy({ children: data })
-  const width = window.innerWidth, height = window.innerHeight;
+  const width = window.innerWidth,
+    height = window.innerHeight
   const descendants = root.descendants()
   const svg = d3
     .select('#container')
@@ -23,18 +24,18 @@ const d3Setup = (data: SoilSisters[]) => {
 
   const g = svg.append('g')
 
-  const zoom = d3.zoom()
-    .on("zoom", (event) => {
-      g.attr("transform", event.transform);
+  const zoom = d3
+    .zoom()
+    .on('zoom', (event) => {
+      g.attr('transform', event.transform)
     })
-    .filter(event => {
-      return event.type !== "wheel";
-    });
+    .filter((event) => {
+      return event.type !== 'wheel'
+    })
 
+  svg.call(zoom as any)
 
-  svg.call(zoom as any);
-
-  const nodeGroups = g.selectAll('g.node').data(descendants).join('g').attr('class', 'node');
+  const nodeGroups = g.selectAll('g.node').data(descendants).join('g').attr('class', 'node')
   nodeGroups
     .append('circle')
     .attr('r', 25)
@@ -52,9 +53,9 @@ const d3Setup = (data: SoilSisters[]) => {
   // can text be center top of the circle
   nodeGroups
     .append('text')
-    .text((d) => d.data.name || d.data["Output Name"])
+    .text((d) => d.data.name || d.data['Output Name'])
     .attr('text-anchor', 'middle')
-    .attr('fill', (d) => (d.data["Output Name"] ? '#F4BF96' : '#A9B388'))
+    .attr('fill', (d) => (d.data['Output Name'] ? '#F4BF96' : '#A9B388'))
     .attr('font-size', 12)
     .attr('font-weight', 'bold')
     .attr('pointer-events', 'none')
@@ -62,27 +63,27 @@ const d3Setup = (data: SoilSisters[]) => {
     .attr('x', 0)
 
   nodeGroups
-    .filter(d => d.data.name || d.data["Output Name"])
+    .filter((d) => d.data.name || d.data['Output Name'])
     .append('circle')
     .attr('r', 5)
-    .attr('fill', (d) => (d.data["Output Name"] ? '#DE8F5F' : '#637E76'))
+    .attr('fill', (d) => (d.data['Output Name'] ? '#DE8F5F' : '#637E76'))
     .attr('cy', -15)
     .attr('cx', 0)
     .attr('cursor', 'pointer')
     .on('click', (event, d) => {
-      const params = { name: d.data.name || d.data["Output Name"]}
-      if (params.name === "" || !params.name) return;
+      const params = { name: d.data.name || d.data['Output Name'] }
+      if (params.name === '' || !params.name) return
       router.push({ name: 'node', params })
     })
 
-    // .on('mouseover', function (event, d) {
-    //   d3.select(this).attr('r', 10)
-    //   d3.select(this.parentNode).select('text').attr('opacity', 1)
-    // })
-    // .on('mouseout', function (event, d) {
-    //   d3.select(this).attr('r', 5)
-    //   d3.select(this.parentNode).select('text').attr('opacity', 0)
-    // })
+  // .on('mouseover', function (event, d) {
+  //   d3.select(this).attr('r', 10)
+  //   d3.select(this.parentNode).select('text').attr('opacity', 1)
+  // })
+  // .on('mouseout', function (event, d) {
+  //   d3.select(this).attr('r', 5)
+  //   d3.select(this.parentNode).select('text').attr('opacity', 0)
+  // })
 
   // watch for window resize and update the svg size
   window.addEventListener('resize', () => {
@@ -96,10 +97,6 @@ const d3Setup = (data: SoilSisters[]) => {
 onMounted(() => {
   d3Setup(store.data)
 })
-
-
-
-
 
 watch(
   () => store.data,

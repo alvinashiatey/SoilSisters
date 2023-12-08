@@ -7,32 +7,17 @@
 </template>
 
 <script setup lang="ts">
-import * as d3 from 'd3'
-import type { ZoomBehavior, ZoomedElementBaseType } from 'd3';
+import createRadialTidyTree from '@/utils/createRadialTidyTree'
+import networkTree from '@/utils/networkTree'
+import ringTree from '@/utils/ringTree'
+import type { NetworkData, Node, Link, Output } from '@/utils/types'
 import { useRoute, useRouter } from 'vue-router'
 import { useSoilSistersStore } from '@/stores/soilSisters'
-import { onMounted, watch, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import type { SoilSisters } from '@/stores/soilSisters'
 
 interface DataItem {
   [key: string]: string | number
-}
-
-interface Node {
-  id: string
-  type: string
-  x?: number
-  y?: number
-}
-
-interface Link {
-  source: string
-  target: string
-}
-
-interface NetworkData {
-  nodes: Node[]
-  links: Link[]
 }
 
 const store = useSoilSistersStore()
@@ -44,9 +29,7 @@ let name = route.params.name
 
 const container = ref<HTMLElement | null>(null)
 
-interface Output {
-  [key: string]: string | number
-}
+
 
 const getOutputs = (data: SoilSisters[]): Output[] | undefined => {
   const outputs = data.find((d) => d.sheetName === 'Outputs')
@@ -178,311 +161,13 @@ function transformDataToNetwork(data: DataItem[]): NetworkData {
   return { nodes, links }
 }
 
-const d3Setup = (networkData: NetworkData) => {
-  const width = window.innerWidth
-  const height = window.innerHeight
-
-  const svg = d3
-    .select(container.value)
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .style('font', '16px sans-serif')
-
-  const g = svg.append('g')
-
-  function forceCenterNode(node: any) {
-            return function(alpha: number) {
-                // Pull the node toward the center with a strength proportional to alpha
-                node.x += (width / 2 - node.x) * alpha;
-                node.y += (height / 2 - node.y) * alpha;
-            }
-        }
-
-        const centerNode = networkData.nodes[0]
-  const zoom = d3
-    .zoom()
-    .on('zoom', (event) => {
-      g.attr('transform', event.transform)
-    })
-    .filter((event) => event.type !== 'wheel')
-
-  svg.call(zoom as any)
-
-  d3
-    .forceSimulation(networkData.nodes as any)
-    .force(
-      'link',
-      d3.forceLink(networkData.links).id((d) => d.id)
-    )
-    .force('charge', d3.forceManyBody().strength(-50))
-    .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide().radius(35))
-    .force('centerNode', forceCenterNode(centerNode))
-    .on('tick', () => {
-      // Update node positions
-      nodeGroups.attr('transform', (d) => `translate(${d.x},${d.y})`)
-
-      // Update link (path) positions
-      link.attr('d', (d) => {
-        const sx = d.source.x,
-          sy = d.source.y,
-          tx = d.target.x,
-          ty = d.target.y
-        const dx = tx - sx,
-          dy = ty - sy,
-          dr = Math.sqrt(dx * dx + dy * dy) // Radius for the curve
-        return `M${sx},${sy}A${dr},${dr} 0 0,1 ${tx},${ty}`
-      })
-    })
-
-  const link = g
-    .selectAll('.link')
-    .data(networkData.links)
-    .join('path')
-    .classed('link', true)
-    .style('stroke', (d) => {
-      if (d.source.type === 'output') {
-        return '#DE8F5F33'
-      } else if (d.source.type === 'fabrication') {
-        return '#FFC43633'
-      } else if (d.source.type === 'modifier') {
-        return '#940B9233'
-      } else if (d.source.type === 'ingredient') {
-        return '#AEC3AE33'
-      }
-      return '#AEC3AE33'
-    })
-    .style('stroke-width', 2)
-    .style('fill', 'none')
-    .attr('d', (d) => {
-      const sx = d.source.x,
-        sy = d.source.y,
-        tx = d.target.x,
-        ty = d.target.y
-      const dx = tx - sx,
-        dy = ty - sy,
-        dr = Math.sqrt(dx * dx + dy * dy)
-      return `M${sx},${sy}A${dr},${dr} 0 0,1 ${tx},${ty}`
-    })
-
-  // Add nodes
-  const nodeGroups = g.selectAll('.node').data(networkData.nodes).join('g').classed('node', true)
-
-  nodeGroups
-    .append('circle')
-    .attr('r', 5)
-    .attr('fill', (d) => {
-      if (d.type === 'output') {
-        return '#DE8F5F'
-      } else if (d.type === 'fabrication') {
-        return '#FFC436'
-      } else if (d.type === 'modifier') {
-        return '#940B92'
-      } else if (d.type === 'ingredient') {
-        return '#AEC3AE'
-      }
-      return '#AEC3AE'
-    }) // Orange for output nodes
-    .attr('cy', 0)
-    .attr('cx', 0)
-    .attr('cursor', 'pointer')
-    .on('click', (event, d) => {
-      const params = { name: d.id }
-      if (params.name === '' || !params.name) return
-      router.push({ name: 'node', params })
-    })
-
-  nodeGroups
-    .append('text')
-    .text((d) => d.id)
-    .attr('text-anchor', 'middle')
-    .attr('fill', (d) => {
-      if (d.type === 'output') {
-        return '#DE8F5F'
-      } else if (d.type === 'fabrication') {
-        return '#FFC436'
-      } else if (d.type === 'modifier') {
-        return '#940B92'
-      } else if (d.type === 'ingredient') {
-        return '#AEC3AE'
-      }
-      return '#AEC3AE'
-    })
-    .attr('font-size', 12)
-    .attr('font-weight', 'bold')
-    .attr('pointer-events', 'none')
-    .attr('alignment-baseline', 'middle')
-    .attr('x', 0)
-    .attr('y', 15)
-}
-
-const d3SetupNew = (networkData: NetworkData, container: HTMLElement) => {
-  const width = window.innerWidth,
-    height = window.innerHeight;
-
-  const svg = d3
-    .select(container)
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .style('font', '16px sans-serif');
-
-  const g = svg.append('g');
-
-  const zoom: ZoomBehavior<ZoomedElementBaseType, unknown> = d3
-    .zoom()
-    .on('zoom', (event) => {
-      g.attr('transform', event.transform);
-    })
-    .filter((event) => event.type !== 'wheel');
-
-  svg.call(zoom as any);
-
-  // arrange nodes in a rows 
-  const margin = { top: 30, right: 30, bottom: 30, left: 100 };
-   const rowSpacing = height / 5;
-   const typeCounts: {
-    [key: string]: number;
-   } = { ingredient: 0, modifier: 0, fabrication: 0, output: 0 };
-  networkData.nodes.forEach(node => {
-    if (typeCounts[node.type] !== undefined) {
-      typeCounts[node.type]++;
-    }
-  });
-
-  // Object to keep track of the number of nodes of each type processed
-  const typeIndex:{
-    [key: string]: number;
-  } = { ingredient: 0, modifier: 0, fabrication: 0, output: 0 };
-
-
-  networkData.nodes.forEach((node, i) => {
-    const columnSpacing = (width/1.5) / (typeCounts[node.type] - 1 || 1);
-    node.x = margin.left + (columnSpacing * typeIndex[node.type]);
-    typeIndex[node.type]++;
-    switch (node.type) {
-      case 'ingredient':
-        node.y = rowSpacing;
-        break;
-      case 'modifier':
-        node.y = rowSpacing * 2;
-        break;
-      case 'fabrication':
-        node.y = rowSpacing * 3;
-        break;
-      case 'output':
-        node.y = rowSpacing * 4;
-        break;
-      default:
-        node.y = rowSpacing * 4;
-    }
-  });
-  
-
-
-  networkData.links.forEach(link => {
-    link.source = networkData.nodes.find(node => node.id === link.source) as Node;
-    link.target = networkData.nodes.find(node => node.id === link.target) as Node;
-  });
-
-  // Add links
-  const link = g.selectAll('.link')
-    .data(networkData.links)
-    .join('path')
-    .classed('link', true)
-    .style('stroke', (d) => {
-      if (d.source.type === 'output') {
-        return '#DE8F5F33'
-      } else if (d.source.type === 'fabrication') {
-        return '#FFC43633'
-      } else if (d.source.type === 'modifier') {
-        return '#940B9233'
-      } else if (d.source.type === 'ingredient') {
-        return '#AEC3AE33'
-      }
-      return '#AEC3AE33'
-    })
-    .style('stroke-width', 2)
-    .style('fill', 'none')
-    .attr('d', (d) => {
-      const sx = d.source.x,
-        sy = d.source.y,
-        tx = d.target.x,
-        ty = d.target.y
-      const dx = tx - sx,
-        dy = ty - sy,
-        dr = Math.sqrt(dx * dx + dy * dy)
-      return `M${sx},${sy}A${dr},${dr} 0 0,1 ${tx},${ty}`
-    })
-    // Styles and attributes for links
-    // ...
-
-  // Add nodes
-  const nodeGroups = g.selectAll('.node')
-    .data(networkData.nodes)
-    .join('g')
-    .classed('node', true)
-    .attr('transform', d => `translate(${d.x!},${d.y!})`);
-
-  // Append circles and text to nodeGroups
-  nodeGroups
-    .append('circle')
-    .attr('r', 5)
-    .attr('fill', (d) => {
-      if (d.type === 'output') {
-        return '#DE8F5F'
-      } else if (d.type === 'fabrication') {
-        return '#FFC436'
-      } else if (d.type === 'modifier') {
-        return '#940B92'
-      } else if (d.type === 'ingredient') {
-        return '#AEC3AE'
-      }
-      return '#AEC3AE'
-    }) // Orange for output nodes
-    .attr('cy', 0)
-    .attr('cx', 0)
-    .attr('cursor', 'pointer')
-    .on('click', (event, d) => {
-      const params = { name: d.id }
-      if (params.name === '' || !params.name) return
-      router.push({ name: 'node', params })
-    })
-
-  // Event listeners for node interaction
-  nodeGroups
-    .append('text')
-    .text((d) => d.id)
-    .attr('text-anchor', 'middle')
-    .attr('fill', (d) => {
-      if (d.type === 'output') {
-        return '#DE8F5F'
-      } else if (d.type === 'fabrication') {
-        return '#FFC436'
-      } else if (d.type === 'modifier') {
-        return '#940B92'
-      } else if (d.type === 'ingredient') {
-        return '#AEC3AE'
-      }
-      return '#AEC3AE'
-    })
-    .attr('font-size', 12)
-    .attr('font-weight', 'bold')
-    .attr('pointer-events', 'none')
-    .attr('alignment-baseline', 'middle')
-    .attr('x', 0)
-    .attr('y', 15)
-}
-
-
 onMounted(() => {
   const r = setUpData(getOutputs(store.data))
   const n = transformDataToNetwork(getOutputs(store.data) as any)
-  console.log(n)
   if (!r) return
-  // d3Setup(n)
-  d3SetupNew(n, container.value as HTMLElement)
+  // networkTree(n, container.value, router)
+  // createRadialTidyTree(getOutputs(store.data), container.value)
+  ringTree(n, container.value, router)
 })
 </script>
 

@@ -6,6 +6,4 @@ import { RouterView } from 'vue-router'
   <RouterView :key="$route.fullPath" />
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>
