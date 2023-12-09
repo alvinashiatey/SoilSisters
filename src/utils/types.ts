@@ -23,3 +23,10 @@ export interface NetworkData {
   nodes: Node[]
   links: Link[]
 }
+
+export interface SoilSisters {
+  sheetName: string
+  children: Array<{
+    [key: string]: string | number
+  }>
+}

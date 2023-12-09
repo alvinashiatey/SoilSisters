@@ -116,3 +116,10 @@ watch(
     </div>
   </main>
 </template>
+
+<style scoped lang="scss">
+main {
+  height: 100dvh;
+  overflow: hidden;
+}
+</style>

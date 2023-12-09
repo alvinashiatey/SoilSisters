@@ -29,8 +29,6 @@ let name = route.params.name
 
 const container = ref<HTMLElement | null>(null)
 
-
-
 const getOutputs = (data: SoilSisters[]): Output[] | undefined => {
   const outputs = data.find((d) => d.sheetName === 'Outputs')
   return outputs?.children?.filter((d) => {
