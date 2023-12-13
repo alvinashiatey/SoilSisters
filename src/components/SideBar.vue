@@ -1,9 +1,16 @@
 <template>
   <div id="sidebar">
     <div v-show="showDetails" ref="details" class="sidebar__details">
+      <button @click="showDetails = false">
+        <!-- svg close -->
+        <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <line x1="3" y1="3" x2="21" y2="21" stroke="#bebebe" stroke-width="2" />
+          <line x1="21" y1="3" x2="3" y2="21" stroke="#bebebe" stroke-width="2" />
+        </svg>
+      </button>
       <p class="title"></p>
       <div class="image__wrapper">
-        <img class="item__image" src="" alt="" />
+        <img class="item__image" src="" alt="" lazy="loading" />
       </div>
       <div class="details__wrapper"></div>
     </div>
@@ -53,6 +60,10 @@ const updateImage = (item: { [key: string]: string | number }, imageElement: HTM
   const imageUrl = item['image'] || item['Image']
   if (imageUrl) {
     imageElement.setAttribute('src', convertDriveLinkToDirectLink(String(imageUrl)))
+    imageElement.setAttribute('alt', String(item.name || item['Output Name']))
+    imageElement.onload = () => {
+      // getDominantColor(imageElement as HTMLImageElement)
+    }
   } else {
     imageElement.setAttribute('src', '')
   }
@@ -126,15 +137,42 @@ const handleClick = (item: { [key: string]: string | number }) => {
   }
 
   .sidebar__details {
-    width: 40%;
+    width: 30%;
     height: fit-content;
+    max-height: 90%;
+    overflow-y: scroll;
     background-color: var(--bg-clr);
     backdrop-filter: blur(5px);
     border-radius: 0.5rem;
     padding: 1em;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
     p.title {
       color: #bebebe;
       border-bottom: 1px solid #e5e5e5;
+    }
+
+    button {
+      position: absolute;
+      top: 1em;
+      right: 1em;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      outline: none;
+      transition: transform 0.2s ease-in-out;
+
+      svg {
+        width: 1em;
+        height: 1em;
+      }
+
+      &:hover {
+        transform: scale(1.2);
+      }
     }
 
     .item__key {

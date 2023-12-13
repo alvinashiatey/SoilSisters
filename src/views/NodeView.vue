@@ -72,10 +72,10 @@ const getOtherIngredientsFromOutputs = (data: Output[] | undefined) => {
 
 const setUpData = (data: Output[] | undefined) => {
   if (!data) return
-  const modifiers = getModifiersFromOutputs(data) || []
-  const fabricationMethods = getFabricationMethodsFromOutputs(data) || []
-  const outPutNames = getOutNameFromOutputs(data) || []
-  const otherIngredients = getOtherIngredientsFromOutputs(data) || []
+  const modifiers = getModifiersFromOutputs(data) ?? []
+  const fabricationMethods = getFabricationMethodsFromOutputs(data) ?? []
+  const outPutNames = getOutNameFromOutputs(data) ?? []
+  const otherIngredients = getOtherIngredientsFromOutputs(data) ?? []
 
   const children = [
     otherIngredients.length > 0 && {
@@ -112,31 +112,28 @@ function transformDataToNetwork(data: DataItem[]): NetworkData {
       const modifierName = item[`Modifier Method ${i}`]
 
       if (ingredientName) {
-        nodes.push({ id: ingredientName, type: 'ingredient' })
+        nodes.push({ id: String(ingredientName), type: 'ingredient' })
 
         if (modifierName) {
-          links.push({ source: ingredientName, target: modifierName })
-          nodes.push({ id: modifierName, type: 'modifier' })
+          links.push({ source: String(ingredientName), target: String(modifierName) })
+          nodes.push({ id: String(modifierName), type: 'modifier' })
 
           if (fabricationMethod) {
-            links.push({ source: modifierName, target: fabricationMethod })
+            links.push({ source: String(modifierName), target: String(fabricationMethod) })
           }
         } else if (fabricationMethod) {
-          links.push({ source: ingredientName, target: fabricationMethod })
+          links.push({ source: String(ingredientName), target: String(fabricationMethod) })
         }
       }
     }
 
-    // Handle fabrication method node
     if (fabricationMethod) {
-      nodes.push({ id: fabricationMethod, type: 'fabrication' })
+      nodes.push({ id: String(fabricationMethod), type: 'fabrication' })
     }
 
-    // Handle output node and its link
     if (outputName) {
-      nodes.push({ id: outputName, type: 'output' })
+      nodes.push({ id: String(outputName), type: 'output' })
 
-      // Determine the source for the link to the output
       const sourceForOutput =
         fabricationMethod ||
         item['Modifier Method 4'] ||
@@ -148,14 +145,12 @@ function transformDataToNetwork(data: DataItem[]): NetworkData {
         item['Ingredient 3 Name'] ||
         item['Ingredient 4 Name']
       if (sourceForOutput) {
-        links.push({ source: sourceForOutput, target: outputName })
+        links.push({ source: String(sourceForOutput), target: String(outputName) })
       }
     }
   })
 
-  // Remove duplicate nodes
   nodes = Array.from(new Map(nodes.map((node) => [node.id, node])).values())
-
   return { nodes, links }
 }
 
