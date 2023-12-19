@@ -52,7 +52,6 @@ const getIngredients = (data: SoilSisters[]) => {
     name: d,
     amount: counts[d] ?? 0
   }))
-  console.log(nodes)
   return { links: linksFlat, nodes }
 }
 
@@ -150,7 +149,6 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
           : '#bebebe05'
       })
       linkForce.distance((link) => {
-        console.log((link as Link)?.from === d.name || (link as Link)?.to === d.name ? 50 : 100)
         return (link as Link)?.from === d.name || (link as Link)?.to === d.name ? 50 : 100
       })
       simulation.alpha(0).restart()
