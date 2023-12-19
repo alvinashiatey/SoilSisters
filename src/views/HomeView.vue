@@ -132,12 +132,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .attr('x', 0)
     .attr('y', 15)
 
-  nodeGroups
-    .append('circle')
-    .attr('r', 5)
-    .attr('fill', '#bebebe')
-    .attr('cy', 0)
-    .attr('cx', 0)
+  nodeGroups.append('circle').attr('r', 5).attr('fill', '#bebebe75').attr('cy', 0).attr('cx', 0)
 
   nodeGroups
     .append('circle')
@@ -145,12 +140,14 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .attr('fill', '#bebebe50')
     .attr('cy', 0)
     .attr('cx', 0)
-    
-    nodeGroups
+
+  nodeGroups
     .attr('cursor', 'pointer')
     .on('mouseover', (event, d) => {
-      linkGroups.selectAll('line').style('stroke', (l) => {
-        return (l as Link)?.from === d.name || (l as Link)?.to === d.name ? '#bebebe' : '#bebebe05'
+      linkGroups.selectAll('path').style('stroke', (l) => {
+        return (l as Link)?.from === d.name || (l as Link)?.to === d.name
+          ? '#bebebe75'
+          : '#bebebe05'
       })
       linkForce.distance((link) => {
         console.log((link as Link)?.from === d.name || (link as Link)?.to === d.name ? 50 : 100)
@@ -166,26 +163,22 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
 
   const updateLink = () => {
     linkGroups
-      .selectAll('line')
+      .selectAll('path')
       .data(links)
-      .join('line')
+      .join('path')
       .attr('id', (d) => (d as Link).id)
       .attr('stroke', '#bebebe05')
-      .attr('x1', (d) => {
+      .attr('fill', 'none')
+      .attr('d', (d) => {
         const source = nodes.find((n) => n.name === d.from)
-        return source?.x ?? 0
-      })
-      .attr('y1', (d) => {
-        const source = nodes.find((n) => n.name === d.from)
-        return source?.y ?? 0
-      })
-      .attr('x2', (d) => {
         const target = nodes.find((n) => n.name === d.to)
-        return target?.x ?? 0
-      })
-      .attr('y2', (d) => {
-        const target = nodes.find((n) => n.name === d.to)
-        return target?.y ?? 0
+
+        if (!source || !target) return ''
+        const dx = (target.x ?? 0) - (source.x ?? 0)
+        const dy = (target.y ?? 0) - (source.y ?? 0)
+        const dr = Math.sqrt(dx * dx + dy * dy)
+
+        return `M${source.x},${source.y}A${dr},${dr} 0 0,1 ${target.x},${target.y}`
       })
   }
 }

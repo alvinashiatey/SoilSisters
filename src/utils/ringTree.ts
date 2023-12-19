@@ -3,7 +3,13 @@ import type { ZoomBehavior, ZoomedElementBaseType } from 'd3'
 import type { NetworkData, Node } from './types'
 import type { Router } from 'vue-router'
 
-const ringTree = (networkData: NetworkData, container: HTMLElement | null, router: Router) => {
+const ringTree = (
+  networkData: NetworkData,
+  container: HTMLElement | null,
+  centerNodeName: string,
+  router: Router
+) => {
+  console.log(centerNodeName)
   if (!container) return
   const width = window.innerWidth,
     height = window.innerHeight
@@ -36,9 +42,14 @@ const ringTree = (networkData: NetworkData, container: HTMLElement | null, route
 
       let currentAngle = startAngle
       nodes.forEach((node) => {
-        node.x = width / 2 + radius * Math.cos((currentAngle * Math.PI) / 180)
-        node.y = height / 2 + radius * Math.sin((currentAngle * Math.PI) / 180)
-        currentAngle -= angleIncrement
+        if (node.id === centerNodeName) {
+          node.x = width / 2
+          node.y = height / 2
+        } else {
+          node.x = width / 2 + radius * Math.cos((currentAngle * Math.PI) / 180)
+          node.y = height / 2 + radius * Math.sin((currentAngle * Math.PI) / 180)
+          currentAngle -= angleIncrement
+        }
       })
     }
 
@@ -70,12 +81,10 @@ const ringTree = (networkData: NetworkData, container: HTMLElement | null, route
         .attr('cy', height / 2)
         .attr('r', radius)
         .style('fill', 'none')
-        .style('stroke', '#bebebe20')
-        .style('stroke-width', '0.5pt')
+        .style('stroke', '#bebebe50')
+        .style('stroke-width', '1pt')
     })
   }
-
-  drawGroupCircles()
 
   networkData.links.forEach((link) => {
     link.source = networkData.nodes.find((node) => node.id === link.source) as Node
@@ -87,53 +96,21 @@ const ringTree = (networkData: NetworkData, container: HTMLElement | null, route
     .data(networkData.links)
     .join('path')
     .classed('link', true)
-    .style('stroke', (d) => {
-      if (d.source.type === 'output') {
-        return '#FFF4DA'
-      } else if (d.source.type === 'fabrication') {
-        return '#FFF4DA'
-      } else if (d.source.type === 'modifier') {
-        return '#FCF9FC'
-      } else if (d.source.type === 'ingredient') {
-        return '#EFF3EF'
-      }
-      return '#AEC3AE33'
-    })
-    .style('stroke-width', 2)
+    .style('stroke', '#bebebe15')
+    .style('stroke-width', 1)
     .style('fill', 'none')
     .attr('d', (d) => {
-      const sx = d.source.x,
-        sy = d.source.y,
-        tx = d.target.x,
-        ty = d.target.y
+      const sx = (d.source as Node).x ?? 0,
+        sy = (d.source as Node).y ?? 0,
+        tx = (d.target as Node).x ?? 0,
+        ty = (d.target as Node).y ?? 0
       const dx = tx - sx,
         dy = ty - sy,
-        dr = Math.sqrt(dx * dx + dy * dy)
+        dr = Math.sqrt(dx * dx + dy * dy) * (Math.random() < 0.5 ? 3 : 1)
       return `M${sx},${sy}A${dr},${dr} 0 0,1 ${tx},${ty}`
     })
 
-  // g.selectAll('.link')
-  //   .data(networkData.links)
-  //   .join('line') // Changed from 'path' to 'line'
-  //   .classed('link', true)
-  //   .style('stroke', (d) => {
-  //     if ((d.source as Node).type === 'output') {
-  //       return '#DE8F5F33'
-  //     } else if ((d.source as Node).type === 'fabrication') {
-  //       return '#FFC43633'
-  //     } else if ((d.source as Node).type === 'modifier') {
-  //       return '#940B9233'
-  //     } else if ((d.source as Node).type === 'ingredient') {
-  //       return '#AEC3AE33'
-  //     }
-  //     return '#AEC3AE33'
-  //   })
-  //   .style('stroke-width', 2)
-  //   .style('fill', 'none')
-  //   .attr('x1', (d) => d.source.x)
-  //   .attr('y1', (d) => d.source.y)
-  //   .attr('x2', (d) => d.target.x)
-  //   .attr('y2', (d) => d.target.y)
+  drawGroupCircles()
 
   const nodeGroups = g
     .selectAll('.node')
@@ -141,78 +118,39 @@ const ringTree = (networkData: NetworkData, container: HTMLElement | null, route
     .join('g')
     .classed('node', true)
     .attr('transform', (d) => `translate(${d.x!},${d.y!})`)
+
   nodeGroups
     .append('circle')
     .attr('r', 5)
-    .attr('fill', (d) => {
-      if (d.type === 'output') {
-        return '#DE8F5F'
-      } else if (d.type === 'fabrication') {
-        return '#FFC436'
-      } else if (d.type === 'modifier') {
-        return '#940B92'
-      } else if (d.type === 'ingredient') {
-        return '#AEC3AE'
-      }
-      return '#AEC3AE'
-    })
+    .attr('fill', '#bebebe75')
     .attr('cy', 0)
     .attr('cx', 0)
-    .attr('cursor', 'pointer')
-    .on('click', (event, d) => {
-      const params = { name: d.id }
-      if (params.name === '' || !params.name) return
-      router.push({ name: 'node', params })
-    })
     .on('mouseover', (event, d) => {
-      // Highlight links where this node is either source or target
-      links.style('stroke', (linkData) => {
-        if (linkData.source.id === d.id || linkData.target.id === d.id) {
-          if (linkData.source.type === 'output') {
+      if (d.type === 'output') {
+        links.style('stroke', (linkData) => {
+          if (linkData.type === d.id) {
             return '#DE8F5F'
-          } else if (linkData.source.type === 'fabrication') {
-            return '#FFC436'
-          } else if (linkData.source.type === 'modifier') {
-            return '#940B92'
-          } else if (linkData.source.type === 'ingredient') {
-            return '#AEC3AE'
           }
-          return '#AEC3AE'
-        }
-        return '#AEC3AE33'
-      })
+          return '#bebebe15'
+        })
+      }
     })
     .on('mouseout', () => {
-      links.style('stroke', (d) => {
-        if (d.source.type === 'output') {
-          return '#FFF4DA'
-        } else if (d.source.type === 'fabrication') {
-          return '#FFF4DA'
-        } else if (d.source.type === 'modifier') {
-          return '#FCF9FC'
-        } else if (d.source.type === 'ingredient') {
-          return '#EFF3EF'
-        }
-        return '#AEC3AE33'
-      })
+      links.style('stroke', '#bebebe15')
+      nodeGroups.select('circle').style('stroke', '#bebebe75')
     })
+  // .attr('cursor', 'pointer')
+  // .on('click', (_, d) => {
+  //   const params = { name: d.id }
+  //   if (params.name === '' || !params.name) return
+  //   router.push({ name: 'node', params })
+  // })
 
   nodeGroups
     .append('text')
     .text((d) => d.id)
     .attr('text-anchor', 'middle')
-    .attr('fill', (d) => {
-      if (d.type === 'output') {
-        return '#DE8F5F'
-      } else if (d.type === 'fabrication') {
-        return '#FFC436'
-      } else if (d.type === 'modifier') {
-        return '#940B92'
-      } else if (d.type === 'ingredient') {
-        return '#AEC3AE'
-      }
-      return '#AEC3AE'
-    })
+    .attr('fill', '#bebebe75')
     .attr('font-size', 12)
     .attr('font-weight', 'bold')
     .attr('pointer-events', 'none')

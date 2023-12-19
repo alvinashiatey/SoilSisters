@@ -7,8 +7,6 @@
 </template>
 
 <script setup lang="ts">
-import createRadialTidyTree from '@/utils/createRadialTidyTree'
-import networkTree from '@/utils/networkTree'
 import ringTree from '@/utils/ringTree'
 import type { NetworkData, Node, Link, Output } from '@/utils/types'
 import { useRoute, useRouter } from 'vue-router'
@@ -99,60 +97,82 @@ const setUpData = (data: Output[] | undefined) => {
   }
 }
 
+function addNode(nodes: Node[], id: string, type: string) {
+  nodes.push({ id, type });
+}
+
+function addLink(links: Link[], source: string, target: string, type?: string) {
+  links.push({ source, target, type });
+}
+
+function findSourceForOutput(item: DataItem): string | number | undefined {
+  return (
+    item['Fabrication Method '] ||
+    item['Modifier Method 4'] ||
+    item['Modifier Method 3'] ||
+    item['Modifier Method 2'] ||
+    item['Modifier Method 1'] ||
+    item['Ingredient 1 Name'] ||
+    item['Ingredient 2 Name'] ||
+    item['Ingredient 3 Name'] ||
+    item['Ingredient 4 Name']
+  ) ?? undefined;
+}
+
 function transformDataToNetwork(data: DataItem[]): NetworkData {
   let nodes: Node[] = [],
-    links: Link[] = []
+      links: Link[] = [];
 
   data.forEach((item) => {
-    const fabricationMethod = item['Fabrication Method ']
-    const outputName = item['Output Name']
+    const fabricationMethod = item['Fabrication Method '];
+    const outputName = item['Output Name'];
+    let lastModifier: string | null = null;
 
     for (let i = 1; i <= 4; i++) {
-      const ingredientName = item[`Ingredient ${i} Name`]
-      const modifierName = item[`Modifier Method ${i}`]
-
+      const ingredientName = item[`Ingredient ${i} Name`];
+      const modifierName = item[`Modifier Method ${i}`];
       if (ingredientName) {
-        nodes.push({ id: String(ingredientName), type: 'ingredient' })
-
+        addNode(nodes, String(ingredientName), 'ingredient');
         if (modifierName) {
-          links.push({ source: String(ingredientName), target: String(modifierName) })
-          nodes.push({ id: String(modifierName), type: 'modifier' })
-
-          if (fabricationMethod) {
-            links.push({ source: String(modifierName), target: String(fabricationMethod) })
+          addNode(nodes, String(modifierName), 'modifier');
+          addLink(links, String(ingredientName), String(modifierName), String(outputName));
+          lastModifier && modifierName ? addLink(links, String(lastModifier), String(modifierName), String(outputName)) : null;
+          lastModifier = modifierName.toString();
+        } else {
+          if (lastModifier) {
+            addLink(links, String(lastModifier), String(ingredientName), String(outputName));
           }
-        } else if (fabricationMethod) {
-          links.push({ source: String(ingredientName), target: String(fabricationMethod) })
+          // lastModifier = modifierName.toString();
         }
+      } else if (modifierName) {
+        addNode(nodes, String(modifierName), 'modifier');
+        if (lastModifier) {
+          addLink(links, String(lastModifier), String(modifierName), String(outputName));
+        }
+        lastModifier = modifierName.toString();
       }
     }
 
     if (fabricationMethod) {
-      nodes.push({ id: String(fabricationMethod), type: 'fabrication' })
+      addNode(nodes, String(fabricationMethod), 'fabrication');
+      if (lastModifier) {
+        addLink(links, String(lastModifier), String(fabricationMethod), String(outputName));
+      }
     }
 
     if (outputName) {
-      nodes.push({ id: String(outputName), type: 'output' })
-
-      const sourceForOutput =
-        fabricationMethod ||
-        item['Modifier Method 4'] ||
-        item['Modifier Method 3'] ||
-        item['Modifier Method 2'] ||
-        item['Modifier Method 1'] ||
-        item['Ingredient 1 Name'] ||
-        item['Ingredient 2 Name'] ||
-        item['Ingredient 3 Name'] ||
-        item['Ingredient 4 Name']
+      addNode(nodes, String(outputName), 'output');
+      const sourceForOutput = findSourceForOutput(item);
       if (sourceForOutput) {
-        links.push({ source: String(sourceForOutput), target: String(outputName) })
+        addLink(links, String(sourceForOutput), String(outputName), String(outputName));
       }
     }
-  })
+  });
 
-  nodes = Array.from(new Map(nodes.map((node) => [node.id, node])).values())
-  return { nodes, links }
+  nodes = Array.from(new Map(nodes.map((node) => [node.id, node])).values());
+  return { nodes, links };
 }
+
 
 onMounted(() => {
   const r = setUpData(getOutputs(store.data))
@@ -160,7 +180,9 @@ onMounted(() => {
   if (!r) return
   // networkTree(n, container.value, router)
   // createRadialTidyTree(getOutputs(store.data), container.value)
-  ringTree(n, container.value, router)
+  // check if name is an array
+  if (Array.isArray(name)) name = name[0]
+  ringTree(n, container.value, name, router)
 })
 </script>
 

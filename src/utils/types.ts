@@ -17,6 +17,7 @@ export interface Node {
 export interface Link {
   source: Node | string
   target: Node | string
+  type?: string
 }
 
 export interface NetworkData {
