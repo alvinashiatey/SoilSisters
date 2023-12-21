@@ -1,3 +1,4 @@
+/* Reset */
 *,
 *::before,
 *::after {
@@ -38,6 +39,15 @@ h6 {
   isolation: isolate;
 }
 
+/* Variables */
+:root {
+  --primary-clr: #181818;
+  --secondary-clr: #e6e6e6;
+  --tertiary-clr: #00b1a1;
+  --quaternary-clr: #73d3cb;
+}
+
+/* Default Styles */
 body {
   min-height: 100vh;
   transition:

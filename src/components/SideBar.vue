@@ -122,6 +122,7 @@ const handleClick = (item: { [key: string]: string | number }) => {
 <style lang="scss">
 #sidebar {
   position: fixed;
+  margin: 1rem;
   pointer-events: none;
   width: 90%;
   height: 100%;
