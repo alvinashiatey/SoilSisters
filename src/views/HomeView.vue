@@ -5,6 +5,11 @@ import { useSoilSistersStore } from '@/stores/soilSisters'
 import type { SoilSisters } from '@/stores/soilSisters'
 import { watch, onMounted } from 'vue'
 
+const PrimaryColor = '#181818'
+const SecondaryColor = '#E6E6E6'
+const TertiaryColor = '#00B1A1'
+const QuaternaryColor = '#73D3CB'
+
 const store = useSoilSistersStore()
 store.fetchSoilSisters()
 
@@ -40,17 +45,21 @@ const getIngredients = (data: SoilSisters[]) => {
     return links
   })
   // find out how many times each ingredient is present in the allIngredients array
-  const counts: Record<string, number> = {}
-  allIngredients.reduce((acc, curr) => {
-    acc[curr] = (acc[curr] || 0) + 1
-    return acc
-  }, counts)
+  const counts = allIngredients.reduce(
+    (acc, curr) => {
+      acc[curr] = (acc[curr] || 0) + 1
+      return acc
+    },
+    {} as Record<string, number>
+  )
+
   const linksFiltered = links?.filter((d) => d)
   const linksFlat = linksFiltered?.flat()
   const combinedArray = [...(ingredientsArray ?? []), ...(outputArray ?? [])]
   const nodes = combinedArray.map((d) => ({
     name: d,
-    amount: counts[d] ?? 0
+    amount: counts[d] ?? 0,
+    type: ingredientsArray.includes(d) ? 'ingredient' : 'output'
   }))
   return { links: linksFlat, nodes }
 }
@@ -73,6 +82,7 @@ interface Node {
   amount?: number
   x?: number
   y?: number
+  type: string
 }
 
 const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
@@ -99,8 +109,9 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
 
   svg.call(zoom as any)
 
-  const nodeGroups = g.selectAll('g.node').data(nodes).join('g').attr('class', 'node')
   const linkGroups = g.append('g').attr('class', 'links')
+  const ng = g.append('g').attr('class', 'nodes')
+  const nodeGroups = ng.selectAll('g.node').data(nodes).join('g').attr('class', 'node')
 
   const linkForce = d3
     .forceLink()
@@ -119,58 +130,17 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
       updateLink()
     })
 
-  nodeGroups
-    .append('text')
-    .text((d) => d.name)
-    .attr('text-anchor', 'middle')
-    .attr('fill', '#bebebe')
-    .attr('font-size', 12)
-    .attr('font-weight', 'bold')
-    .attr('pointer-events', 'none')
-    .attr('alignment-baseline', 'middle')
-    .attr('x', 0)
-    .attr('y', 15)
-
-  nodeGroups.append('circle').attr('r', 5).attr('fill', '#bebebe75').attr('cy', 0).attr('cx', 0)
-
-  nodeGroups
-    .append('circle')
-    .attr('r', (d) => (d.amount ? d.amount : 0))
-    .attr('fill', '#bebebe50')
-    .attr('cy', 0)
-    .attr('cx', 0)
-
-  nodeGroups
-    .attr('cursor', 'pointer')
-    .on('mouseover', (event, d) => {
-      linkGroups.selectAll('path').style('stroke', (l) => {
-        return (l as Link)?.from === d.name || (l as Link)?.to === d.name
-          ? '#bebebe75'
-          : '#bebebe05'
-      })
-      linkForce.distance((link) => {
-        return (link as Link)?.from === d.name || (link as Link)?.to === d.name ? 50 : 100
-      })
-      simulation.alpha(0).restart()
-    })
-    .on('click', (event, d) => {
-      const params = { name: d.name }
-      if (params.name === '' || !params.name) return
-      router.push({ name: 'node', params })
-    })
-
   const updateLink = () => {
     linkGroups
       .selectAll('path')
       .data(links)
       .join('path')
       .attr('id', (d) => (d as Link).id)
-      .attr('stroke', '#bebebe05')
+      .attr('stroke', 'none')
       .attr('fill', 'none')
       .attr('d', (d) => {
         const source = nodes.find((n) => n.name === d.from)
         const target = nodes.find((n) => n.name === d.to)
-
         if (!source || !target) return ''
         const dx = (target.x ?? 0) - (source.x ?? 0)
         const dy = (target.y ?? 0) - (source.y ?? 0)
@@ -179,6 +149,116 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
         return `M${source.x},${source.y}A${dr},${dr} 0 0,1 ${target.x},${target.y}`
       })
   }
+
+ 
+
+  // Function to handle mouseover event
+  const handleMouseOver = (event: MouseEvent, d: Node) => {
+    updateLinkStyles(d.name.toString(), QuaternaryColor)
+    updateConnectedNodeStyles(d, TertiaryColor, QuaternaryColor, 1)
+    restartSimulation()
+    updateNodeStyles(event.currentTarget, QuaternaryColor, TertiaryColor, 1)
+  }
+
+  // Function to handle mouseout event
+  const handleMouseOut = (event: MouseEvent, d: Node) => {
+    updateLinkStyles(null, 'none')
+    restartSimulation()
+    updateConnectedNodeStyles(d, PrimaryColor, SecondaryColor, 0)
+    updateNodeStyles(event.currentTarget, SecondaryColor, PrimaryColor, 0)
+  }
+
+  // Function to get connected nodes
+  const getConnectedNodes = (d: Node) => {
+    const connectedNodes = links.filter((l) => {
+      return l.from === d.name || l.to === d.name
+    })
+
+    const connectedNodeNames = connectedNodes.map((l) => {
+      return l.from === d.name ? l.to : l.from
+    })
+
+    return nodeGroups.filter((n) => {
+      return connectedNodeNames.includes(n.name)
+    })
+  }
+
+  // Function to update link styles
+  const updateLinkStyles = (nodeName: string | null, stroke: string) => {
+    linkGroups
+      .selectAll('path')
+      .style('stroke', (l) => {
+        return (l as Link).from === nodeName || (l as Link).to === nodeName ? stroke : 'none'
+      })
+  }
+
+  // Function to update connected node styles
+  const updateConnectedNodeStyles = (d: Node, centerFill: string, circleFill: string, textOpacity: number) => {
+    const connectedNodes = getConnectedNodes(d)
+    connectedNodes.select('.node__center').attr('fill', centerFill)
+    connectedNodes.select('.node__circle').attr('fill', circleFill)
+    connectedNodes.select('text').attr('opacity', textOpacity)
+  }
+
+  // Function to restart simulation
+  const restartSimulation = () => {
+    simulation.alpha(0).restart()
+  }
+
+  // Function to update node styles
+  const updateNodeStyles = (target: any, circleFill: string, centerFill: string, textOpacity: number) => {
+    d3.select(target).select('.node__circle').attr('fill', circleFill)
+    d3.select(target).select('.node__center').attr('fill', centerFill)
+    d3.select(target).select('text').attr('opacity', textOpacity)
+  }
+
+  nodeGroups
+    .attr('cursor', 'pointer')
+    .on('mouseover', handleMouseOver)
+    .on('mouseout', handleMouseOut)
+    .on('click', (event, d) => {
+      // updateLinkStyles(d.name.toString(), QuaternaryColor)
+    })
+
+
+  nodeGroups
+    .append('circle')
+    .attr('r', (d) => (d.amount ? d.amount : 0))
+    .attr('fill', SecondaryColor)
+    .attr('cy', 0)
+    .attr('cx', 0)
+    .attr('class', 'node__circle')
+
+  nodeGroups.each(function (d) {
+    if (d.type === 'ingredient') {
+      d3.select(this).append('circle')
+      .attr('r', 5)
+      .attr('fill', PrimaryColor)
+      .attr('cy', 0)
+      .attr('cx', 0)
+      .attr('class', 'node__center')
+    } else {
+      d3.select(this).append('rect')
+      .attr('width', 10)
+      .attr('height', 10)
+      .attr('fill', PrimaryColor)
+      .attr('y', -5)
+      .attr('x', -5)
+      .attr('class', 'node__center')
+    }
+  })
+
+  nodeGroups
+    .append('text')
+    .text((d) => d.name)
+    .attr('text-anchor', 'middle')
+    .attr('fill', TertiaryColor)
+    .attr('font-size', 12)
+    .attr('pointer-events', 'none')
+    .attr('alignment-baseline', 'middle')
+    .attr('x', 0)
+    .attr('y', 25)
+    .attr('opacity', 0)
 }
 
 onMounted(() => {

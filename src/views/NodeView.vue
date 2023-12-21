@@ -98,81 +98,83 @@ const setUpData = (data: Output[] | undefined) => {
 }
 
 function addNode(nodes: Node[], id: string, type: string) {
-  nodes.push({ id, type });
+  nodes.push({ id, type })
 }
 
 function addLink(links: Link[], source: string, target: string, type?: string) {
-  links.push({ source, target, type });
+  links.push({ source, target, type })
 }
 
 function findSourceForOutput(item: DataItem): string | number | undefined {
   return (
-    item['Fabrication Method '] ||
-    item['Modifier Method 4'] ||
-    item['Modifier Method 3'] ||
-    item['Modifier Method 2'] ||
-    item['Modifier Method 1'] ||
-    item['Ingredient 1 Name'] ||
-    item['Ingredient 2 Name'] ||
-    item['Ingredient 3 Name'] ||
-    item['Ingredient 4 Name']
-  ) ?? undefined;
+    (item['Fabrication Method '] ||
+      item['Modifier Method 4'] ||
+      item['Modifier Method 3'] ||
+      item['Modifier Method 2'] ||
+      item['Modifier Method 1'] ||
+      item['Ingredient 1 Name'] ||
+      item['Ingredient 2 Name'] ||
+      item['Ingredient 3 Name'] ||
+      item['Ingredient 4 Name']) ??
+    undefined
+  )
 }
 
 function transformDataToNetwork(data: DataItem[]): NetworkData {
   let nodes: Node[] = [],
-      links: Link[] = [];
+    links: Link[] = []
 
   data.forEach((item) => {
-    const fabricationMethod = item['Fabrication Method '];
-    const outputName = item['Output Name'];
-    let lastModifier: string | null = null;
+    const fabricationMethod = item['Fabrication Method ']
+    const outputName = item['Output Name']
+    let lastModifier: string | null = null
 
     for (let i = 1; i <= 4; i++) {
-      const ingredientName = item[`Ingredient ${i} Name`];
-      const modifierName = item[`Modifier Method ${i}`];
+      const ingredientName = item[`Ingredient ${i} Name`]
+      const modifierName = item[`Modifier Method ${i}`]
       if (ingredientName) {
-        addNode(nodes, String(ingredientName), 'ingredient');
+        addNode(nodes, String(ingredientName), 'ingredient')
         if (modifierName) {
-          addNode(nodes, String(modifierName), 'modifier');
-          addLink(links, String(ingredientName), String(modifierName), String(outputName));
-          lastModifier && modifierName ? addLink(links, String(lastModifier), String(modifierName), String(outputName)) : null;
-          lastModifier = modifierName.toString();
+          addNode(nodes, String(modifierName), 'modifier')
+          addLink(links, String(ingredientName), String(modifierName), String(outputName))
+          lastModifier && modifierName
+            ? addLink(links, String(lastModifier), String(modifierName), String(outputName))
+            : null
+          lastModifier = modifierName.toString()
         } else {
           if (lastModifier) {
-            addLink(links, String(lastModifier), String(ingredientName), String(outputName));
+            addLink(links, String(lastModifier), String(ingredientName), String(outputName))
           }
           // lastModifier = modifierName.toString();
         }
       } else if (modifierName) {
-        addNode(nodes, String(modifierName), 'modifier');
+        addNode(nodes, String(modifierName), 'modifier')
         if (lastModifier) {
-          addLink(links, String(lastModifier), String(modifierName), String(outputName));
+          addLink(links, String(lastModifier), String(modifierName), String(outputName))
         }
-        lastModifier = modifierName.toString();
+        lastModifier = modifierName.toString()
       }
     }
 
     if (fabricationMethod) {
-      addNode(nodes, String(fabricationMethod), 'fabrication');
+      addNode(nodes, String(fabricationMethod), 'fabrication')
       if (lastModifier) {
-        addLink(links, String(lastModifier), String(fabricationMethod), String(outputName));
+        addLink(links, String(lastModifier), String(fabricationMethod), String(outputName))
       }
     }
 
     if (outputName) {
-      addNode(nodes, String(outputName), 'output');
-      const sourceForOutput = findSourceForOutput(item);
+      addNode(nodes, String(outputName), 'output')
+      const sourceForOutput = findSourceForOutput(item)
       if (sourceForOutput) {
-        addLink(links, String(sourceForOutput), String(outputName), String(outputName));
+        addLink(links, String(sourceForOutput), String(outputName), String(outputName))
       }
     }
-  });
+  })
 
-  nodes = Array.from(new Map(nodes.map((node) => [node.id, node])).values());
-  return { nodes, links };
+  nodes = Array.from(new Map(nodes.map((node) => [node.id, node])).values())
+  return { nodes, links }
 }
-
 
 onMounted(() => {
   const r = setUpData(getOutputs(store.data))
