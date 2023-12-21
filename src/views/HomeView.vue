@@ -145,12 +145,9 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
         const dx = (target.x ?? 0) - (source.x ?? 0)
         const dy = (target.y ?? 0) - (source.y ?? 0)
         const dr = Math.sqrt(dx * dx + dy * dy)
-
         return `M${source.x},${source.y}A${dr},${dr} 0 0,1 ${target.x},${target.y}`
       })
   }
-
- 
 
   // Function to handle mouseover event
   const handleMouseOver = (event: MouseEvent, d: Node) => {
@@ -185,15 +182,18 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
 
   // Function to update link styles
   const updateLinkStyles = (nodeName: string | null, stroke: string) => {
-    linkGroups
-      .selectAll('path')
-      .style('stroke', (l) => {
-        return (l as Link).from === nodeName || (l as Link).to === nodeName ? stroke : 'none'
-      })
+    linkGroups.selectAll('path').style('stroke', (l) => {
+      return (l as Link).from === nodeName || (l as Link).to === nodeName ? stroke : 'none'
+    })
   }
 
   // Function to update connected node styles
-  const updateConnectedNodeStyles = (d: Node, centerFill: string, circleFill: string, textOpacity: number) => {
+  const updateConnectedNodeStyles = (
+    d: Node,
+    centerFill: string,
+    circleFill: string,
+    textOpacity: number
+  ) => {
     const connectedNodes = getConnectedNodes(d)
     connectedNodes.select('.node__center').attr('fill', centerFill)
     connectedNodes.select('.node__circle').attr('fill', circleFill)
@@ -206,7 +206,12 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
   }
 
   // Function to update node styles
-  const updateNodeStyles = (target: any, circleFill: string, centerFill: string, textOpacity: number) => {
+  const updateNodeStyles = (
+    target: any,
+    circleFill: string,
+    centerFill: string,
+    textOpacity: number
+  ) => {
     d3.select(target).select('.node__circle').attr('fill', circleFill)
     d3.select(target).select('.node__center').attr('fill', centerFill)
     d3.select(target).select('text').attr('opacity', textOpacity)
@@ -220,7 +225,6 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
       // updateLinkStyles(d.name.toString(), QuaternaryColor)
     })
 
-
   nodeGroups
     .append('circle')
     .attr('r', (d) => (d.amount ? d.amount : 0))
@@ -231,20 +235,22 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
 
   nodeGroups.each(function (d) {
     if (d.type === 'ingredient') {
-      d3.select(this).append('circle')
-      .attr('r', 5)
-      .attr('fill', PrimaryColor)
-      .attr('cy', 0)
-      .attr('cx', 0)
-      .attr('class', 'node__center')
+      d3.select(this)
+        .append('circle')
+        .attr('r', 5)
+        .attr('fill', PrimaryColor)
+        .attr('cy', 0)
+        .attr('cx', 0)
+        .attr('class', 'node__center')
     } else {
-      d3.select(this).append('rect')
-      .attr('width', 10)
-      .attr('height', 10)
-      .attr('fill', PrimaryColor)
-      .attr('y', -5)
-      .attr('x', -5)
-      .attr('class', 'node__center')
+      d3.select(this)
+        .append('rect')
+        .attr('width', 10)
+        .attr('height', 10)
+        .attr('fill', PrimaryColor)
+        .attr('y', -5)
+        .attr('x', -5)
+        .attr('class', 'node__center')
     }
   })
 
@@ -257,7 +263,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .attr('pointer-events', 'none')
     .attr('alignment-baseline', 'middle')
     .attr('x', 0)
-    .attr('y', 25)
+    .attr('y', 30)
     .attr('opacity', 0)
 }
 

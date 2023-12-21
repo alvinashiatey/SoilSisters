@@ -5,11 +5,12 @@
 </template>
 
 <script lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, onUnmounted } from 'vue'
 
 export default {
   setup() {
     const canvas = ref<HTMLCanvasElement | null>(null)
+    let intervalId: number | null = null
 
     onMounted(() => {
       if (!canvas.value) return
@@ -36,7 +37,7 @@ export default {
           for (let j = 0; j < cols; j++) {
             const cell = grid[i][j]
             if (!ctx) return
-            ctx.fillStyle = cell ? 'green' : 'white'
+            ctx.fillStyle = cell ? '#00B1A1' : 'white'
             ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize)
           }
         }
@@ -74,6 +75,19 @@ export default {
       }
 
       tick()
+
+      intervalId = setInterval(() => {
+        const randomRow = Math.floor(Math.random() * rows)
+        const randomCol = Math.floor(Math.random() * cols)
+        grid[randomRow][randomCol] = true
+        console.log('interval', grid[randomRow][randomCol])
+      }, 1000)
+    })
+
+    onUnmounted(() => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
     })
 
     return { canvas }
