@@ -80,7 +80,6 @@ export default {
         const randomRow = Math.floor(Math.random() * rows)
         const randomCol = Math.floor(Math.random() * cols)
         grid[randomRow][randomCol] = true
-        console.log('interval', grid[randomRow][randomCol])
       }, 1000)
     })
 

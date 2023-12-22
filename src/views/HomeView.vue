@@ -3,12 +3,26 @@ import { useRouter } from 'vue-router'
 import * as d3 from 'd3'
 import { useSoilSistersStore } from '@/stores/soilSisters'
 import type { SoilSisters } from '@/stores/soilSisters'
-import { watch, onMounted } from 'vue'
+import { watch, onMounted, ref } from 'vue'
+import type { Selection, BaseType } from 'd3'
+import plantIcon from '@/assets/icons/Plants-02.svg'
+import outputIcon from '@/assets/icons/Fungi-02.svg'
 
 const PrimaryColor = '#181818'
 const SecondaryColor = '#E6E6E6'
 const TertiaryColor = '#00B1A1'
 const QuaternaryColor = '#73D3CB'
+
+const props = defineProps({
+  selectItem: {
+    type: Object,
+    required: true
+  }
+})
+
+const nodeGroupsRef = ref<any | null>(null)
+const linkGroupsRef = ref<any | null>(null)
+const linksRef = ref<Link[] | null>(null)
 
 const store = useSoilSistersStore()
 store.fetchSoilSisters()
@@ -85,8 +99,94 @@ interface Node {
   type: string
 }
 
+const handleMouseOver = (
+  event: MouseEvent,
+  d: Node,
+  links: Link[],
+  nodeGroups: Selection<SVGGElement | BaseType, Node, SVGGElement, unknown>,
+  linkGroups: d3.Selection<SVGGElement, unknown, HTMLElement, any>,
+  svgElement: SVGGElement | null = null
+) => {
+  const el = svgElement ?? event.currentTarget
+  updateLinkStyles(d.name.toString(), QuaternaryColor, linkGroups)
+  updateConnectedNodeStyles(d, TertiaryColor, QuaternaryColor, 1, links, nodeGroups)
+  updateNodeStyles(el, QuaternaryColor, TertiaryColor, 1)
+}
+
+const handleMouseOut = (
+  event: MouseEvent,
+  d: Node,
+  links: Link[],
+  nodeGroups: Selection<SVGGElement | BaseType, Node, SVGGElement, unknown>,
+  linkGroups: d3.Selection<SVGGElement, unknown, HTMLElement, any>,
+  svgElement: SVGGElement | null = null
+) => {
+  const el = svgElement ?? event.currentTarget
+  updateLinkStyles(null, 'none', linkGroups)
+  updateConnectedNodeStyles(d, PrimaryColor, SecondaryColor, 0, links, nodeGroups)
+  updateNodeStyles(el, SecondaryColor, PrimaryColor, 0)
+}
+
+const getConnectedNodes = (
+  d: Node,
+  links: Link[],
+  nodeGroups: Selection<SVGGElement | BaseType, Node, SVGGElement, unknown>
+) => {
+  const connectedNodes = links.filter((l) => {
+    return l.from === d.name || l.to === d.name
+  })
+
+  const connectedNodeNames = connectedNodes.map((l) => {
+    return l.from === d.name ? l.to : l.from
+  })
+
+  return nodeGroups.filter((n) => {
+    return connectedNodeNames.includes(n.name)
+  })
+}
+
+const updateLinkStyles = (
+  nodeName: string | null,
+  stroke: string,
+  linkGroups: d3.Selection<SVGGElement, unknown, HTMLElement, any>
+) => {
+  linkGroups.selectAll('path').style('stroke', (l) => {
+    return (l as Link).from === nodeName || (l as Link).to === nodeName ? stroke : 'none'
+  })
+}
+
+const updateConnectedNodeStyles = (
+  d: Node,
+  centerFill: string,
+  circleFill: string,
+  textOpacity: number,
+  links: Link[],
+  nodeGroups: Selection<SVGGElement | BaseType, Node, SVGGElement, unknown>
+) => {
+  const connectedNodes = getConnectedNodes(d, links, nodeGroups)
+  connectedNodes.select('.node__center').attr('fill', centerFill)
+  connectedNodes.select('.node__circle').attr('fill', circleFill)
+  connectedNodes.select('text').attr('opacity', textOpacity)
+}
+
+const restartSimulation = (simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>) => {
+  simulation.alpha(0).restart()
+}
+
+const updateNodeStyles = (
+  target: any,
+  circleFill: string,
+  centerFill: string,
+  textOpacity: number
+) => {
+  d3.select(target).select('.node__circle').attr('fill', circleFill)
+  d3.select(target).select('.node__center').attr('fill', centerFill)
+  d3.select(target).select('text').attr('opacity', textOpacity)
+}
+
 const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
   if (!links) return
+  linksRef.value = links
   const width = window.innerWidth,
     height = window.innerHeight
   const svg = d3
@@ -103,15 +203,22 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .on('zoom', (event) => {
       g.attr('transform', event.transform)
     })
-    .filter((event) => {
-      return event.type !== 'wheel'
-    })
+    // .filter((event) => {
+    //   return event.type !== 'wheel'
+    // })
 
   svg.call(zoom as any)
 
   const linkGroups = g.append('g').attr('class', 'links')
   const ng = g.append('g').attr('class', 'nodes')
-  const nodeGroups = ng.selectAll('g.node').data(nodes).join('g').attr('class', 'node')
+  const nodeGroups = ng
+    .selectAll('g.node')
+    .data(nodes)
+    .join('g')
+    .attr('class', 'node')
+    .attr('data-name', (d) => d.name.toString())
+  nodeGroupsRef.value = nodeGroups
+  linkGroupsRef.value = linkGroups
 
   const linkForce = d3
     .forceLink()
@@ -149,78 +256,10 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
       })
   }
 
-  // Function to handle mouseover event
-  const handleMouseOver = (event: MouseEvent, d: Node) => {
-    updateLinkStyles(d.name.toString(), QuaternaryColor)
-    updateConnectedNodeStyles(d, TertiaryColor, QuaternaryColor, 1)
-    restartSimulation()
-    updateNodeStyles(event.currentTarget, QuaternaryColor, TertiaryColor, 1)
-  }
-
-  // Function to handle mouseout event
-  const handleMouseOut = (event: MouseEvent, d: Node) => {
-    updateLinkStyles(null, 'none')
-    restartSimulation()
-    updateConnectedNodeStyles(d, PrimaryColor, SecondaryColor, 0)
-    updateNodeStyles(event.currentTarget, SecondaryColor, PrimaryColor, 0)
-  }
-
-  // Function to get connected nodes
-  const getConnectedNodes = (d: Node) => {
-    const connectedNodes = links.filter((l) => {
-      return l.from === d.name || l.to === d.name
-    })
-
-    const connectedNodeNames = connectedNodes.map((l) => {
-      return l.from === d.name ? l.to : l.from
-    })
-
-    return nodeGroups.filter((n) => {
-      return connectedNodeNames.includes(n.name)
-    })
-  }
-
-  // Function to update link styles
-  const updateLinkStyles = (nodeName: string | null, stroke: string) => {
-    linkGroups.selectAll('path').style('stroke', (l) => {
-      return (l as Link).from === nodeName || (l as Link).to === nodeName ? stroke : 'none'
-    })
-  }
-
-  // Function to update connected node styles
-  const updateConnectedNodeStyles = (
-    d: Node,
-    centerFill: string,
-    circleFill: string,
-    textOpacity: number
-  ) => {
-    const connectedNodes = getConnectedNodes(d)
-    connectedNodes.select('.node__center').attr('fill', centerFill)
-    connectedNodes.select('.node__circle').attr('fill', circleFill)
-    connectedNodes.select('text').attr('opacity', textOpacity)
-  }
-
-  // Function to restart simulation
-  const restartSimulation = () => {
-    simulation.alpha(0).restart()
-  }
-
-  // Function to update node styles
-  const updateNodeStyles = (
-    target: any,
-    circleFill: string,
-    centerFill: string,
-    textOpacity: number
-  ) => {
-    d3.select(target).select('.node__circle').attr('fill', circleFill)
-    d3.select(target).select('.node__center').attr('fill', centerFill)
-    d3.select(target).select('text').attr('opacity', textOpacity)
-  }
-
   nodeGroups
     .attr('cursor', 'pointer')
-    .on('mouseover', handleMouseOver)
-    .on('mouseout', handleMouseOut)
+    .on('mouseover', (event, d) => handleMouseOver(event, d, links, nodeGroups, linkGroups))
+    .on('mouseout', (event, d) => handleMouseOut(event, d, links, nodeGroups, linkGroups))
     .on('click', (event, d) => {
       // updateLinkStyles(d.name.toString(), QuaternaryColor)
     })
@@ -236,20 +275,21 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
   nodeGroups.each(function (d) {
     if (d.type === 'ingredient') {
       d3.select(this)
-        .append('circle')
-        .attr('r', 5)
-        .attr('fill', PrimaryColor)
-        .attr('cy', 0)
-        .attr('cx', 0)
+        .append('foreignObject')
+        .attr('width', 10)
+        .attr('height', 10)
+        .attr('y', -5)
+        .attr('x', -5)
+        .html(`<img src="${plantIcon}" alt="plant svg"/>`)
         .attr('class', 'node__center')
     } else {
       d3.select(this)
-        .append('rect')
+        .append('foreignObject')
         .attr('width', 10)
         .attr('height', 10)
-        .attr('fill', PrimaryColor)
         .attr('y', -5)
         .attr('x', -5)
+        .html(`<img src="${outputIcon}" alt="output svg"/>`)
         .attr('class', 'node__center')
     }
   })
@@ -277,6 +317,23 @@ watch(
   () => {
     const { links, nodes } = getIngredients(store.data)
     d3SetupWithLinks(links, nodes)
+  }
+)
+
+watch(
+  () => props.selectItem,
+  (newVal, oldVal) => {
+    const nodeGroups = nodeGroupsRef.value
+    if (!newVal) return
+    nodeGroups.each(function (d: Node) {
+      if (d.name === newVal.name) {
+        const event = new MouseEvent('mouseover')
+        this.dispatchEvent(event)
+      } else if (d.name === oldVal.name) {
+        const event = new MouseEvent('mouseout')
+        this.dispatchEvent(event)
+      }
+    })
   }
 )
 </script>

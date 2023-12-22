@@ -41,6 +41,8 @@
 import { useSoilSistersStore } from '@/stores/soilSisters'
 import { ref } from 'vue'
 
+const emit = defineEmits(['update:selectedItem'])
+
 const store = useSoilSistersStore()
 store.fetchSoilSisters()
 
@@ -116,6 +118,7 @@ const handleClick = (item: { [key: string]: string | number }) => {
   updateTitle(item, titleElement)
   updateImage(item, imageElement)
   updateDetails(item, detailsWrapper)
+  emit('update:selectedItem', item)
 }
 </script>
 
