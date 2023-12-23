@@ -37,4 +37,40 @@ const isUrl = (value: string) => {
   }
 }
 
-export { convertDriveLinkToDirectLink, createLinkElement, updateImage, isUrl, updateTitle }
+function updateDetails(
+  item: { [key: string]: string | number },
+  detailsWrapper: HTMLElement,
+  specificKeys: string[] = []
+) {
+  const ignoreKeys = ['image', 'Image', 'name', 'Name', 'Output Name']
+  detailsWrapper.innerHTML = ''
+
+  const keysToUse =
+    specificKeys.length > 0
+      ? specificKeys
+      : Object.keys(item).filter((key) => !ignoreKeys.includes(key))
+
+  keysToUse.forEach((key) => {
+    const value = item[key]
+    const p = document.createElement('p')
+
+    if (typeof value === 'string' && isUrl(value)) {
+      const linkElement = createLinkElement(value)
+      p.innerHTML = `<span class="item__key">${key}:</span> `
+      p.appendChild(linkElement)
+    } else if (value !== undefined) {
+      p.innerHTML = `<span class="item__key">${key}:</span><br><span class="detail_content">${value}</span>`
+    }
+
+    detailsWrapper.appendChild(p)
+  })
+}
+
+export {
+  convertDriveLinkToDirectLink,
+  createLinkElement,
+  updateImage,
+  isUrl,
+  updateTitle,
+  updateDetails
+}

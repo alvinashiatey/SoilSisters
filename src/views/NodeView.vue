@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import type { NetworkData, Node, Link, Output, Params, DataStructure } from '@/utils/types'
-import { createLinkElement, updateImage, isUrl } from '@/utils/helpers'
+import { createLinkElement, updateImage, updateDetails } from '@/utils/helpers'
 import { useRoute, useRouter } from 'vue-router'
 import { useSoilSistersStore } from '@/stores/soilSisters'
 import { onMounted, ref, watch } from 'vue'
@@ -209,8 +209,10 @@ watch(
       const item = outputs.value?.find((d) => d['Output Name'] === newVal.id)
       if (!item) return
       const imageElement = details.value!.querySelector('.item__image') as HTMLElement
+      const detailsWrapper = details.value!.querySelector('.details__wrapper') as HTMLElement
 
       updateImage(item, imageElement)
+      updateDetails(item, detailsWrapper, ["notes"])
     } else {
       isHovered.value = false
     }
@@ -227,7 +229,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .wrapper{
   z-index: 100;
 }
@@ -236,25 +238,39 @@ onMounted(() => {
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 20rem;
+  width: 25rem;
   height: max-content;
   background-color: color-mix(in srgb, var(--quaternary-clr), transparent 30%);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   padding: 0.5rem;
   display: flex;
   justify-content: flex-start;
+  gap: 1rem;
   margin: 1.5rem;
   border-radius: 5px;
   z-index: -10;
+  
 
   .image__wrapper {
     width: 10rem;
+    height: 10rem;
     aspect-ratio: 1/1;
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       border-radius: 5px;
+    }
+  }
+
+  .details__wrapper {
+    p{
+      .item__key{
+        text-transform: capitalize;
+        font-weight: bold;
+      }
+      font-size:  clamp(1rem, 1.2vw, 1.5rem);
+      line-height: 120%;
     }
   }
 }

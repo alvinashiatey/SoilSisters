@@ -63,7 +63,7 @@ const updateDetails = (item: { [key: string]: string | number }, detailsWrapper:
         p.innerHTML = `<span class="item__key">${key}:</span> `
         p.appendChild(linkElement)
       } else {
-        p.innerHTML = `<span class="item__key">${key}:</span> ${value}`
+        p.innerHTML = `<span class="item__key">${key}:</span><span class="detail_content">${value}</span>`
       }
 
       detailsWrapper.appendChild(p)
