@@ -9,7 +9,6 @@ const ringTree = (
   centerNodeName: string,
   router: Router
 ) => {
-  console.log(centerNodeName)
   if (!container) return
   const width = window.innerWidth,
     height = window.innerHeight

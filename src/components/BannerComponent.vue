@@ -35,7 +35,7 @@ window.addEventListener('click', (e) => {
   z-index: 1000;
   width: 50vw;
   h3 {
-    font-size: 2.5rem;
+    font-size: clamp(1rem, 2vw, 2.5rem);
     line-height: 120%;
   }
 }

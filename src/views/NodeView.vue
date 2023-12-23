@@ -7,12 +7,12 @@
 </template>
 
 <script setup lang="ts">
-import ringTree from '@/utils/ringTree'
-import type { NetworkData, Node, Link, Output } from '@/utils/types'
+import type { NetworkData, Node, Link, Output, Params, DataStructure } from '@/utils/types'
 import { useRoute, useRouter } from 'vue-router'
 import { useSoilSistersStore } from '@/stores/soilSisters'
 import { onMounted, ref } from 'vue'
 import type { SoilSisters } from '@/stores/soilSisters'
+import collapsableTree from '@/utils/collapsableTree'
 
 interface DataItem {
   [key: string]: string | number
@@ -48,14 +48,25 @@ const getModifiersFromOutputs = (data: Output[] | undefined) => {
 
 const getFabricationMethodsFromOutputs = (data: Output[] | undefined) => {
   if (!data) return
-  const fabricationMethods = data.map((d) => d['Fabrication Method']).filter((d) => d)
+  const fabricationMethods = data.map((d) => d['Fabrication Method ']).filter((d) => d)
   return [...new Set(fabricationMethods)]
 }
 
 const getOutNameFromOutputs = (data: Output[] | undefined) => {
-  if (!data) return
-  const outNames = data.map((d) => d['Output Name']).filter((d) => d)
-  return [...new Set(outNames)]
+  if (!data) return []
+  return data.map((d) => {
+    const ingredients = Array.from({ length: 4 }, (_, i) => d[`Ingredient ${i + 1} Name`]).filter(
+      Boolean
+    )
+    const modifiers = Array.from({ length: 4 }, (_, i) => d[`Modifier Method ${i + 1}`]).filter(
+      Boolean
+    )
+    return {
+      outputName: d['Output Name'],
+      ingredients,
+      modifiers
+    }
+  })
 }
 
 const getOtherIngredientsFromOutputs = (data: Output[] | undefined) => {
@@ -68,7 +79,7 @@ const getOtherIngredientsFromOutputs = (data: Output[] | undefined) => {
   return [...new Set(otherIngredients.flat())].filter((d) => d !== name)
 }
 
-const setUpData = (data: Output[] | undefined) => {
+const setUpData = (data: Output[] | undefined): DataStructure | undefined => {
   if (!data) return
   const modifiers = getModifiersFromOutputs(data) ?? []
   const fabricationMethods = getFabricationMethodsFromOutputs(data) ?? []
@@ -77,16 +88,16 @@ const setUpData = (data: Output[] | undefined) => {
 
   const children = [
     otherIngredients.length > 0 && {
-      field: 'Other Ingredients',
+      name: 'Ingredients',
       children: otherIngredients.map((m) => ({ name: m }))
     },
-    modifiers.length > 0 && { field: 'Modifiers', children: modifiers.map((m) => ({ name: m })) },
+    modifiers.length > 0 && { name: 'Modifiers', children: modifiers.map((m) => ({ name: m })) },
     fabricationMethods.length > 0 && {
-      field: 'Fabrication Methods',
+      name: 'Fabrication Methods',
       children: fabricationMethods.map((m) => ({ name: m }))
     },
     outPutNames.length > 0 && {
-      field: 'Output Names',
+      name: 'Outputs',
       children: outPutNames.map((m) => ({ name: m }))
     }
   ].filter(Boolean) //
@@ -178,13 +189,10 @@ function transformDataToNetwork(data: DataItem[]): NetworkData {
 
 onMounted(() => {
   const r = setUpData(getOutputs(store.data))
-  const n = transformDataToNetwork(getOutputs(store.data) as any)
   if (!r) return
-  // networkTree(n, container.value, router)
-  // createRadialTidyTree(getOutputs(store.data), container.value)
-  // check if name is an array
   if (Array.isArray(name)) name = name[0]
-  ringTree(n, container.value, name, router)
+  const params = route.params as unknown as Params
+  collapsableTree(r, container.value, params)
 })
 </script>
 

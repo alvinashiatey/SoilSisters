@@ -20,7 +20,7 @@ const router = createRouter({
     // }
     //   dynamic route
     {
-      path: '/node/:name',
+      path: '/node/:name?&:type?',
       name: 'node',
       component: NodeView,
       props: true

@@ -7,6 +7,7 @@ import { watch, onMounted, ref } from 'vue'
 import type { Selection, BaseType } from 'd3'
 import plantIcon from '@/assets/icons/Plants-02.svg'
 import outputIcon from '@/assets/icons/Fungi-02.svg'
+import SideBar from '@/components/SideBar.vue'
 
 const PrimaryColor = '#181818'
 const SecondaryColor = '#E6E6E6'
@@ -198,14 +199,12 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
 
   const g = svg.append('g')
 
-  const zoom = d3
-    .zoom()
-    .on('zoom', (event) => {
-      g.attr('transform', event.transform)
-    })
-    // .filter((event) => {
-    //   return event.type !== 'wheel'
-    // })
+  const zoom = d3.zoom().on('zoom', (event) => {
+    g.attr('transform', event.transform)
+  })
+  // .filter((event) => {
+  //   return event.type !== 'wheel'
+  // })
 
   svg.call(zoom as any)
 
@@ -261,7 +260,13 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .on('mouseover', (event, d) => handleMouseOver(event, d, links, nodeGroups, linkGroups))
     .on('mouseout', (event, d) => handleMouseOut(event, d, links, nodeGroups, linkGroups))
     .on('click', (event, d) => {
-      // updateLinkStyles(d.name.toString(), QuaternaryColor)
+      router.push({
+        name: 'node',
+        params: {
+          name: d.name.toString(),
+          type: d.type
+        }
+      })
     })
 
   nodeGroups
@@ -308,6 +313,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
 }
 
 onMounted(() => {
+  if (!store.data) return
   const { links, nodes } = getIngredients(store.data)
   d3SetupWithLinks(links, nodes)
 })
@@ -328,9 +334,11 @@ watch(
     nodeGroups.each(function (d: Node) {
       if (d.name === newVal.name) {
         const event = new MouseEvent('mouseover')
+        // @ts-ignore
         this.dispatchEvent(event)
       } else if (d.name === oldVal.name) {
         const event = new MouseEvent('mouseout')
+        // @ts-ignore
         this.dispatchEvent(event)
       }
     })
@@ -340,6 +348,7 @@ watch(
 
 <template>
   <main>
+    <SideBar />
     <div class="wrapper">
       <div class="loading" v-if="store.isFetching">
         <h4>Loading...</h4>
