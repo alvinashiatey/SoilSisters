@@ -215,7 +215,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .data(nodes)
     .join('g')
     .attr('class', 'node')
-    .attr('data-name', (d) => d.name.toString())
+    .attr('data-name', (d) => d.name?.toString())
   nodeGroupsRef.value = nodeGroups
   linkGroupsRef.value = linkGroups
 

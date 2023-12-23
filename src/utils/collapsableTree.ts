@@ -52,11 +52,13 @@ const outputType = [
 const collapsableTree = (
   data: DataStructure | undefined,
   container: HTMLElement | null,
-  clicked: Ref<Node | null>
+  clicked: Ref<Node | null>,
+  width: number | undefined = undefined,
+  height: number | undefined = undefined
 ) => {
   if (!container) return
-  const width = window.innerWidth,
-    height = window.innerHeight
+  width = width ?? window.innerWidth
+  height = height ?? window.innerHeight
 
   const nodes = setupNodes(reStructureData(data))
   const links = setUpLinks(reStructureData(data))
@@ -77,7 +79,7 @@ const collapsableTree = (
   function positionNodes(nodes: Node[]) {
     const positionNodesInColumn = (nodes: Node[], startX: number, gap: number) => {
       const nodeHeight = 20 // Adjust as needed
-      let startY = (height - (nodes.length * nodeHeight + (nodes.length - 1) * gap)) / 2
+      let startY = ((height ?? 0) - (nodes.length * nodeHeight + (nodes.length - 1) * gap)) / 2
       nodes.forEach((node) => {
         node.x = startX
         node.y = startY
@@ -91,9 +93,10 @@ const collapsableTree = (
       output: nodes.filter((node) => node.type === 'output'),
       outputType: nodes.filter((node) => node.type === 'outputType')
     }
+
     const gap = 16 // Gap between nodes
     const numberOfColumns = Object.keys(groups).length
-    const columnWidth = width / numberOfColumns
+    const columnWidth = (width ?? 0) / numberOfColumns
     let startX = columnWidth / 2
 
     positionNodesInColumn(groups['outputType'], startX, gap)
@@ -153,7 +156,7 @@ const collapsableTree = (
     })
     // @ts-ignore
     .attr('cy', (d) => d.y)
-    .attr('fill', '#000000')
+    .attr('fill', TertiaryColor)
     .attr('stroke', 'none')
     .attr('stroke-width', 1)
 
@@ -165,7 +168,7 @@ const collapsableTree = (
       if (d.type === 'output') {
         linkGroup
           .selectAll('path')
-          .attr('stroke-opacity', (link) => ((link as Link).type === d.id ? 1 : 0)) // Hide non-matching links
+          .attr('stroke-opacity', (link) => ((link as Link).type === d.id ? 1 : 0))
           .filter((link) => (link as Link).type === d.id)
           .attr('stroke', QuaternaryColor)
           .attr('stroke-width', 2)
@@ -196,13 +199,19 @@ const collapsableTree = (
       d3
         .linkHorizontal()
         // @ts-ignore
-        .x((d) => d.x)
+        .x((d) => d?.x)
         // @ts-ignore
-        .y((d) => d.y)
+        .y((d) => d?.y)
     )
     .attr('stroke', SecondaryColor)
     .attr('stroke-width', 1)
     .attr('fill', 'none')
+
+  const totalHeight = d3.select('g.nodes').node()?.getBBox().height + 100
+  if (totalHeight > height) {
+    svg.remove()
+    collapsableTree(data, container, clicked, width, totalHeight)
+  }
 }
 
 const setupNodes = (data: DataStructure | undefined): Node[] => {
@@ -223,7 +232,7 @@ const setupNodes = (data: DataStructure | undefined): Node[] => {
               typeof item.name === 'string'
                 ? item.name.toString()
                 : typeof item.name === 'object'
-                  ? item.name.outputName.toString()
+                  ? item.name.outputName?.toString()
                   : '',
             type: child.name === 'Ingredients' ? 'ingredient' : 'output'
           })
@@ -273,17 +282,17 @@ const setUpLinks = (data: DataStructure | undefined): Link[] => {
     if (output && typeof output.name === 'object') {
       const outputName = output.name.outputName
 
-      addLink(output.name.outputType.toString(), outputName.toString(), outputName.toString())
+      addLink(output.name.outputType?.toString(), outputName?.toString(), outputName?.toString())
 
       output.name.modifiers.forEach((modifier) => {
-        addLink(outputName.toString(), modifier.toString(), outputName.toString())
+        addLink(outputName?.toString(), modifier?.toString(), outputName?.toString())
       })
 
       output.name.ingredients.forEach((ingredient, index) => {
         addLink(
-          output.name.modifiers[index].toString(),
-          ingredient.toString(),
-          outputName.toString()
+          output.name.modifiers[index]?.toString(),
+          ingredient?.toString(),
+          outputName?.toString()
         )
       })
     }

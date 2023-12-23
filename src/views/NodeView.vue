@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import type { NetworkData, Node, Link, Output, Params, DataStructure } from '@/utils/types'
-import { createLinkElement, updateImage, updateDetails } from '@/utils/helpers'
+import { updateImage, updateDetails } from '@/utils/helpers'
 import { useRoute, useRouter } from 'vue-router'
 import { useSoilSistersStore } from '@/stores/soilSisters'
 import { onMounted, ref, watch } from 'vue'
@@ -212,7 +212,7 @@ watch(
       const detailsWrapper = details.value!.querySelector('.details__wrapper') as HTMLElement
 
       updateImage(item, imageElement)
-      updateDetails(item, detailsWrapper, ["notes"])
+      updateDetails(item, detailsWrapper, ['notes'])
     } else {
       isHovered.value = false
     }
@@ -230,7 +230,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-.wrapper{
+.wrapper {
   z-index: 100;
 }
 
@@ -239,6 +239,7 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   width: 25rem;
+  max-width: fit-content;
   height: max-content;
   background-color: color-mix(in srgb, var(--quaternary-clr), transparent 30%);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
@@ -249,7 +250,6 @@ onMounted(() => {
   margin: 1.5rem;
   border-radius: 5px;
   z-index: -10;
-  
 
   .image__wrapper {
     width: 10rem;
@@ -264,12 +264,12 @@ onMounted(() => {
   }
 
   .details__wrapper {
-    p{
-      .item__key{
+    p {
+      .item__key {
         text-transform: capitalize;
         font-weight: bold;
       }
-      font-size:  clamp(1rem, 1.2vw, 1.5rem);
+      font-size: clamp(1rem, 1.2vw, 1.5rem);
       line-height: 120%;
     }
   }
