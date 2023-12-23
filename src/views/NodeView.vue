@@ -61,10 +61,13 @@ const getOutNameFromOutputs = (data: Output[] | undefined) => {
     const modifiers = Array.from({ length: 4 }, (_, i) => d[`Modifier Method ${i + 1}`]).filter(
       Boolean
     )
+
+    const outputType = d['Output Type']
     return {
       outputName: d['Output Name'],
       ingredients,
-      modifiers
+      modifiers,
+      outputType
     }
   })
 }

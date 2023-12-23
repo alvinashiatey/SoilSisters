@@ -8,6 +8,7 @@ export interface Output {
       outputName: string | number
       ingredients: (string | number)[]
       modifiers: (string | number)[]
+      outputType: string | number
     }
   }[]
 }
@@ -29,6 +30,17 @@ const modifiers = [
   'drying',
   'heating',
   'heating + pressing'
+]
+
+const outputType = [
+  'Textile',
+  'Textile Fiberboard',
+  'Textile Furniture',
+  'earth block',
+  'earth wall',
+  'earth render',
+  'plant dyes',
+  'textile plant dyes'
 ]
 
 const collapsableTree = (
@@ -58,6 +70,12 @@ const collapsableTree = (
     .attr('height', height)
     .attr('style', 'max-width: 100%; height: auto; font: 10px sans-serif; user-select: none;')
 
+  // on resize, re-render
+  window.addEventListener('resize', () => {
+    svg.remove()
+    collapsableTree(data, container, clicked)
+  })
+
   function positionNodes(nodes: Node[]) {
     const positionNodesInColumn = (nodes: Node[], startX: number, gap: number) => {
       const nodeHeight = 20 // Adjust as needed
@@ -72,13 +90,16 @@ const collapsableTree = (
     const groups = {
       ingredient: nodes.filter((node) => node.type === 'ingredient'),
       modifiers: nodes.filter((node) => node.type === 'modifier'),
-      output: nodes.filter((node) => node.type === 'output')
+      output: nodes.filter((node) => node.type === 'output'),
+      outputType: nodes.filter((node) => node.type === 'outputType')
     }
     const gap = 16 // Gap between nodes
     const numberOfColumns = Object.keys(groups).length
     const columnWidth = width / numberOfColumns
     let startX = columnWidth / 2
 
+    positionNodesInColumn(groups['outputType'], startX, gap)
+    startX += columnWidth
     positionNodesInColumn(groups['output'], startX, gap)
     startX += columnWidth
     positionNodesInColumn(groups['modifiers'], startX, gap)
@@ -87,6 +108,7 @@ const collapsableTree = (
   }
 
   positionNodes(nodes)
+  const linkGroup = svg.append('g').attr('class', 'links')
   const nodeGroup = svg.append('g').attr('class', 'nodes')
 
   const textElements = nodeGroup
@@ -116,6 +138,7 @@ const collapsableTree = (
       if (d.type === 'ingredient') {
         return d.x
       } else {
+        // @ts-ignore
         const dx = d.x + textWidths[i] + 20
         d.x = dx
         return dx
@@ -127,7 +150,31 @@ const collapsableTree = (
     .attr('stroke', 'none')
     .attr('stroke-width', 1)
 
-  const linkGroup = svg.append('g').attr('class', 'links')
+  nodeGroup
+    .selectAll('text')
+    .data(nodes)
+    .attr('cursor', 'pointer')
+    .on('mouseover', function (event, d) {
+      if (d.type === 'output') {
+        linkGroup
+          .selectAll('path')
+          .attr('stroke-opacity', (link) => ((link as Link).type === d.id ? 1 : 0)) // Hide non-matching links
+          .filter((link) => (link as Link).type === d.id)
+          .attr('stroke', '#000000')
+          .attr('stroke-width', 2)
+      }
+    })
+    .on('mouseout', function (event, d) {
+      // if output highlight all links
+      if (d.type === 'output') {
+        linkGroup
+          .selectAll('path')
+          .attr('stroke-opacity', 1) // Reset opacity for all links
+          .filter((link) => (link as Link).type === d.id)
+          .attr('stroke', '#F0F1F1')
+          .attr('stroke-width', 1)
+      }
+    })
 
   linkGroup
     .selectAll('path')
@@ -136,12 +183,15 @@ const collapsableTree = (
     .append('path')
     .attr(
       'd',
+      // @ts-ignore
       d3
         .linkHorizontal()
+        // @ts-ignore
         .x((d) => d.x)
+        // @ts-ignore
         .y((d) => d.y)
     )
-    .attr('stroke', '#00000010')
+    .attr('stroke', '#F0F1F1')
     .attr('stroke-width', 1)
     .attr('fill', 'none')
 }
@@ -185,6 +235,13 @@ const setupNodes = (data: DataStructure | undefined): Node[] => {
     })
   })
 
+  outputType.forEach((output) => {
+    nodes.push({
+      id: output,
+      type: 'outputType'
+    })
+  })
+
   return nodes
 }
 
@@ -199,7 +256,6 @@ const setUpLinks = (data: DataStructure | undefined): Link[] => {
       type
     })
   }
-
   // create link from output to modifiers then to ingredients
   const outputs = data.children?.find((child): child is Output => child && child.name === 'Outputs')
     ?.children
@@ -207,6 +263,8 @@ const setUpLinks = (data: DataStructure | undefined): Link[] => {
   outputs?.forEach((output) => {
     if (output && typeof output.name === 'object') {
       const outputName = output.name.outputName
+
+      addLink(output.name.outputType.toString(), outputName.toString(), outputName.toString())
 
       output.name.modifiers.forEach((modifier) => {
         addLink(outputName.toString(), modifier.toString(), outputName.toString())
@@ -268,8 +326,8 @@ const reStructureData = (data: DataStructure | undefined, clicked: Params) => {
 
     data.children.sort((a, b) => {
       const order = ['Output', 'Modifiers', 'Ingredients']
-      if (a && a.field && b && b.field) {
-        return order.indexOf(a.field) - order.indexOf(b.field)
+      if (a && a.name && b && b.name) {
+        return order.indexOf(a.name) - order.indexOf(b.name)
       }
       return 0
     })
