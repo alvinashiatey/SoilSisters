@@ -3,14 +3,21 @@
     <div class="wrapper">
       <div ref="container" id="container"></div>
     </div>
+    <div v-show="isHovered" ref="details" id="details">
+      <div class="image__wrapper">
+        <img class="item__image" src="" alt="" lazy="loading" />
+      </div>
+      <div class="details__wrapper"></div>
+    </div>
   </main>
 </template>
 
 <script setup lang="ts">
 import type { NetworkData, Node, Link, Output, Params, DataStructure } from '@/utils/types'
+import { createLinkElement, updateImage, isUrl } from '@/utils/helpers'
 import { useRoute, useRouter } from 'vue-router'
 import { useSoilSistersStore } from '@/stores/soilSisters'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import type { SoilSisters } from '@/stores/soilSisters'
 import collapsableTree from '@/utils/collapsableTree'
 
@@ -25,7 +32,11 @@ const route = useRoute()
 const router = useRouter()
 let name = route.params.name
 
+const details = ref<HTMLElement | null>(null)
 const container = ref<HTMLElement | null>(null)
+const hoverNode = ref<Node | null>(null)
+const isHovered = ref(false)
+const outputs = ref<Output[] | undefined>(undefined)
 
 const getOutputs = (data: SoilSisters[]): Output[] | undefined => {
   const outputs = data.find((d) => d.sheetName === 'Outputs')
@@ -58,7 +69,7 @@ const getOutNameFromOutputs = (data: Output[] | undefined) => {
     const ingredients = Array.from({ length: 4 }, (_, i) => d[`Ingredient ${i + 1} Name`]).filter(
       Boolean
     )
-    const modifiers = Array.from({ length: 4 }, (_, i) => d[`Modifier Method ${i + 1}`]).filter(
+    const modifiers = Array.from({ length: 5 }, (_, i) => d[`Modifier Method ${i + 1}`]).filter(
       Boolean
     )
 
@@ -190,13 +201,61 @@ function transformDataToNetwork(data: DataItem[]): NetworkData {
   return { nodes, links }
 }
 
+watch(
+  () => hoverNode.value,
+  (newVal) => {
+    if (newVal) {
+      isHovered.value = true
+      const item = outputs.value?.find((d) => d['Output Name'] === newVal.id)
+      if (!item) return
+      const imageElement = details.value!.querySelector('.item__image') as HTMLElement
+
+      updateImage(item, imageElement)
+    } else {
+      isHovered.value = false
+    }
+  }
+)
+
 onMounted(() => {
-  const r = setUpData(getOutputs(store.data))
+  outputs.value = getOutputs(store.data)
+  const r = setUpData(outputs.value)
   if (!r) return
   if (Array.isArray(name)) name = name[0]
   const params = route.params as unknown as Params
-  collapsableTree(r, container.value, params)
+  collapsableTree(r, container.value, hoverNode)
 })
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.wrapper{
+  z-index: 100;
+}
+
+#details {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 20rem;
+  height: max-content;
+  background-color: color-mix(in srgb, var(--quaternary-clr), transparent 30%);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  padding: 0.5rem;
+  display: flex;
+  justify-content: flex-start;
+  margin: 1.5rem;
+  border-radius: 5px;
+  z-index: -10;
+
+  .image__wrapper {
+    width: 10rem;
+    aspect-ratio: 1/1;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+  }
+}
+</style>

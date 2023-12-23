@@ -1,5 +1,6 @@
 import * as d3 from 'd3'
 import type { DataStructure, Params, Node, Link } from './types'
+import type { Ref } from 'vue'
 
 export interface Output {
   name: string
@@ -12,6 +13,11 @@ export interface Output {
     }
   }[]
 }
+
+const PrimaryColor = '#181818'
+const SecondaryColor = '#F2F4F2'
+const TertiaryColor = '#00B1A1'
+const QuaternaryColor = '#73D3CB'
 
 const modifiers = [
   'cutting',
@@ -46,22 +52,14 @@ const outputType = [
 const collapsableTree = (
   data: DataStructure | undefined,
   container: HTMLElement | null,
-  clicked: Params
+  clicked: Ref<Node | null>
 ) => {
   if (!container) return
   const width = window.innerWidth,
     height = window.innerHeight
 
-  const nodes = setupNodes(reStructureData(data, clicked))
-  const links = setUpLinks(reStructureData(data, clicked))
-  links.forEach((link) => {
-    const sourceNode = nodes.find((node) => node.id === link.source)
-    const targetNode = nodes.find((node) => node.id === link.target)
-    if (sourceNode && targetNode) {
-      link.source = sourceNode
-      link.target = targetNode
-    }
-  })
+  const nodes = setupNodes(reStructureData(data))
+  const links = setUpLinks(reStructureData(data))
 
   const svg = d3
     .select(container)
@@ -108,6 +106,15 @@ const collapsableTree = (
   }
 
   positionNodes(nodes)
+  links.forEach((link) => {
+    const sourceNode = nodes.find((node) => node.id === link.source)
+    const targetNode = nodes.find((node) => node.id === link.target)
+    if (sourceNode && targetNode) {
+      link.source = sourceNode
+      link.target = targetNode
+    }
+  })
+
   const linkGroup = svg.append('g').attr('class', 'links')
   const nodeGroup = svg.append('g').attr('class', 'nodes')
 
@@ -160,8 +167,9 @@ const collapsableTree = (
           .selectAll('path')
           .attr('stroke-opacity', (link) => ((link as Link).type === d.id ? 1 : 0)) // Hide non-matching links
           .filter((link) => (link as Link).type === d.id)
-          .attr('stroke', '#000000')
+          .attr('stroke', QuaternaryColor)
           .attr('stroke-width', 2)
+        clicked.value = d
       }
     })
     .on('mouseout', function (event, d) {
@@ -171,8 +179,9 @@ const collapsableTree = (
           .selectAll('path')
           .attr('stroke-opacity', 1) // Reset opacity for all links
           .filter((link) => (link as Link).type === d.id)
-          .attr('stroke', '#F0F1F1')
+          .attr('stroke', SecondaryColor)
           .attr('stroke-width', 1)
+        clicked.value = null
       }
     })
 
@@ -191,7 +200,7 @@ const collapsableTree = (
         // @ts-ignore
         .y((d) => d.y)
     )
-    .attr('stroke', '#F0F1F1')
+    .attr('stroke', SecondaryColor)
     .attr('stroke-width', 1)
     .attr('fill', 'none')
 }
@@ -304,7 +313,7 @@ const collapseModifiersAndFabricationMethods = (data: DataStructure | undefined)
   return modifiersAndFabricationMethods
 }
 
-const reStructureData = (data: DataStructure | undefined, clicked: Params) => {
+const reStructureData = (data: DataStructure | undefined) => {
   const modifiers = collapseModifiersAndFabricationMethods(data)
   if (data?.children) {
     data.children = data.children.reduce(

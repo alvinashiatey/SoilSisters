@@ -39,6 +39,7 @@
 
 <script setup lang="ts">
 import { useSoilSistersStore } from '@/stores/soilSisters'
+import { createLinkElement, updateImage, isUrl, updateTitle } from '@/utils/helpers'
 import { ref } from 'vue'
 
 const emit = defineEmits(['update:selectedItem'])
@@ -48,45 +49,6 @@ store.fetchSoilSisters()
 
 const details = ref<HTMLElement | null>(null)
 const showDetails = ref(false)
-
-function convertDriveLinkToDirectLink(driveLink: string) {
-  const fileId = driveLink.match(/[-\w]{25,}/)
-  return fileId ? `https://drive.google.com/uc?export=view&id=${fileId[0]}` : ''
-}
-
-const updateTitle = (item: { [key: string]: string | number }, titleElement: HTMLElement) => {
-  titleElement.innerText = String(item.name || item['Output Name'])
-}
-
-const updateImage = (item: { [key: string]: string | number }, imageElement: HTMLElement) => {
-  const imageUrl = item['image'] || item['Image']
-  if (imageUrl) {
-    imageElement.setAttribute('src', convertDriveLinkToDirectLink(String(imageUrl)))
-    imageElement.setAttribute('alt', String(item.name || item['Output Name']))
-    imageElement.onload = () => {
-      // getDominantColor(imageElement as HTMLImageElement)
-    }
-  } else {
-    imageElement.setAttribute('src', '')
-  }
-}
-
-const isUrl = (value: string) => {
-  try {
-    new URL(value)
-    return true
-  } catch {
-    return false
-  }
-}
-
-const createLinkElement = (url: string) => {
-  const a = document.createElement('a')
-  a.setAttribute('href', url)
-  a.innerText = 'Link'
-  a.setAttribute('target', '_blank') // opens the link in a new tab
-  return a
-}
 
 const updateDetails = (item: { [key: string]: string | number }, detailsWrapper: HTMLElement) => {
   const ignoreKeys = ['image', 'Image', 'name', 'Name', 'Output Name']
