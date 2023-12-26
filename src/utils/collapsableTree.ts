@@ -62,6 +62,7 @@ const collapsableTree = (
   if (!container) return
   width = width ?? window.innerWidth
   height = height ?? window.innerHeight
+  const margin = 150
 
   const nodes = setupNodes(reStructureData(data))
   const links = setUpLinks(reStructureData(data))
@@ -71,6 +72,7 @@ const collapsableTree = (
     .append('svg')
     .attr('width', width)
     .attr('height', height)
+    .attr('viewBox', `${-margin} ${-margin} ${width + margin * 2} ${height + margin * 2}`)
     .attr('style', 'max-width: 100%; height: auto; font: 10px sans-serif; user-select: none;')
 
   // on resize, re-render
@@ -111,10 +113,10 @@ const collapsableTree = (
 
     const groups = {
       bioBased: nodes.filter((node) => node.type === 'bioBased'),
-      outputType: nodes.filter((node) => node.type === 'outputType'),
-      output: nodes.filter((node) => node.type === 'output'),
-      modifiers: nodes.filter((node) => node.type === 'modifier'),
-      ingredient: nodes.filter((node) => node.type === 'ingredient')
+      'output category': nodes.filter((node) => node.type === 'outputType'),
+      outputs: nodes.filter((node) => node.type === 'output'),
+      'processing methods': nodes.filter((node) => node.type === 'modifier'),
+      'BioBased ingredient': nodes.filter((node) => node.type === 'ingredient')
     }
 
     const gap = 16 // Gap between nodes
@@ -130,6 +132,9 @@ const collapsableTree = (
     })
   }
 
+  const linkGroup = svg.append('g').attr('class', 'links')
+  const nodeGroup = svg.append('g').attr('class', 'nodes')
+
   positionNodes(nodes)
   links.forEach((link) => {
     const sourceNode = nodes.find((node) => node.id === link.source)
@@ -139,9 +144,6 @@ const collapsableTree = (
       link.target = targetNode
     }
   })
-
-  const linkGroup = svg.append('g').attr('class', 'links')
-  const nodeGroup = svg.append('g').attr('class', 'nodes')
 
   const textElements = nodeGroup
     .selectAll('text')
