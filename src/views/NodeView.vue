@@ -74,11 +74,13 @@ const getOutNameFromOutputs = (data: Output[] | undefined) => {
     )
 
     const outputType = d['Output Type']
+    const bioBased = d['BioBased']
     return {
       outputName: d['Output Name'],
       ingredients,
       modifiers,
-      outputType
+      outputType,
+      bioBased
     }
   })
 }
@@ -114,7 +116,7 @@ const setUpData = (data: Output[] | undefined): DataStructure | undefined => {
       name: 'Outputs',
       children: outPutNames.map((m) => ({ name: m }))
     }
-  ].filter(Boolean) //
+  ].filter(Boolean)
 
   return {
     name: name, // Assuming 'name' is defined elsewhere in your code

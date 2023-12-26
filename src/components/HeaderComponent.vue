@@ -11,6 +11,7 @@
 <style scoped>
 header {
   margin-inline-start: 1rem;
+  padding-inline-start: 1rem;
   position: fixed;
   h1 {
     &:hover {

@@ -10,12 +10,13 @@ export interface Output {
       ingredients: (string | number)[]
       modifiers: (string | number)[]
       outputType: string | number
+      bioBased: string | number
     }
   }[]
 }
 
 const PrimaryColor = '#181818'
-const SecondaryColor = '#F2F4F2'
+const SecondaryColor = '#E6E6E6'
 const TertiaryColor = '#00B1A1'
 const QuaternaryColor = '#73D3CB'
 
@@ -49,6 +50,8 @@ const outputType = [
   'textile plant dyes'
 ]
 
+const bioBased = ['Biobased material', 'Biobased color']
+
 const collapsableTree = (
   data: DataStructure | undefined,
   container: HTMLElement | null,
@@ -76,6 +79,25 @@ const collapsableTree = (
     collapsableTree(data, container, clicked)
   })
 
+  function addColumnLabel(
+    svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+    labelText: string,
+    x: number,
+    y: number
+  ) {
+    svg
+      .append('text')
+      .text(labelText.toUpperCase())
+      .attr('x', x)
+      .attr('y', y)
+      .attr('text-anchor', 'middle') // Center-align text
+      .attr('alignment-baseline', 'middle')
+      .attr('transform', `rotate(-90, ${x}, ${y})`) // Rotate the text -90 degrees
+      .attr('font-size', '14px')
+      .attr('font-weight', 'bold')
+      .attr('fill', '#000000')
+  }
+
   function positionNodes(nodes: Node[]) {
     const positionNodesInColumn = (nodes: Node[], startX: number, gap: number) => {
       const nodeHeight = 20 // Adjust as needed
@@ -88,24 +110,24 @@ const collapsableTree = (
     }
 
     const groups = {
-      ingredient: nodes.filter((node) => node.type === 'ingredient'),
-      modifiers: nodes.filter((node) => node.type === 'modifier'),
+      bioBased: nodes.filter((node) => node.type === 'bioBased'),
+      outputType: nodes.filter((node) => node.type === 'outputType'),
       output: nodes.filter((node) => node.type === 'output'),
-      outputType: nodes.filter((node) => node.type === 'outputType')
+      modifiers: nodes.filter((node) => node.type === 'modifier'),
+      ingredient: nodes.filter((node) => node.type === 'ingredient')
     }
 
     const gap = 16 // Gap between nodes
+    const labelOffset = 10
     const numberOfColumns = Object.keys(groups).length
     const columnWidth = (width ?? 0) / numberOfColumns
-    let startX = columnWidth / 2
+    let startX = columnWidth / 3
 
-    positionNodesInColumn(groups['outputType'], startX, gap)
-    startX += columnWidth
-    positionNodesInColumn(groups['output'], startX, gap)
-    startX += columnWidth
-    positionNodesInColumn(groups['modifiers'], startX, gap)
-    startX += columnWidth
-    positionNodesInColumn(groups['ingredient'], startX, gap)
+    Object.entries(groups).forEach(([key, value]: [string, Node[]]) => {
+      positionNodesInColumn(value, startX, gap)
+      addColumnLabel(svg, key, startX - labelOffset, (height ?? 0) / 2)
+      startX += columnWidth
+    })
   }
 
   positionNodes(nodes)
@@ -184,7 +206,7 @@ const collapsableTree = (
           .filter((link) => (link as Link).type === d.id)
           .attr('stroke', SecondaryColor)
           .attr('stroke-width', 1)
-        clicked.value = null
+        // clicked.value = null
       }
     })
 
@@ -206,7 +228,7 @@ const collapsableTree = (
     .attr('stroke', SecondaryColor)
     .attr('stroke-width', 1)
     .attr('fill', 'none')
-
+  // @ts-ignore
   const totalHeight = d3.select('g.nodes').node()?.getBBox().height + 100
   if (totalHeight > height) {
     svg.remove()
@@ -215,25 +237,20 @@ const collapsableTree = (
 }
 
 const setupNodes = (data: DataStructure | undefined): Node[] => {
-  const nodes: Node[] = []
-  if (!data) return nodes
+  if (!data) return []
 
-  const addNodes = (node: Node) => {
-    nodes.push(node)
-  }
+  let nodes: Node[] = []
 
   const nodesFromName = ['Ingredients', 'Outputs']
   data.children?.forEach((child) => {
     if (child && child.name && nodesFromName.includes(child.name)) {
       child.children?.forEach((item) => {
         if (item && 'name' in item) {
-          addNodes({
-            id:
-              typeof item.name === 'string'
-                ? item.name.toString()
-                : typeof item.name === 'object'
-                  ? item.name.outputName?.toString()
-                  : '',
+          const nodeName =
+            // @ts-ignore
+            typeof item.name === 'string' ? item.name : item.name?.outputName?.toString() || ''
+          nodes.push({
+            id: nodeName,
             type: child.name === 'Ingredients' ? 'ingredient' : 'output'
           })
         }
@@ -241,24 +258,13 @@ const setupNodes = (data: DataStructure | undefined): Node[] => {
     }
   })
 
-  nodes.push({
-    id: data.name.toString(),
-    type: 'ingredient'
-  })
+  nodes.push({ id: data.name.toString(), type: 'ingredient' })
 
-  modifiers.forEach((modifier) => {
-    nodes.push({
-      id: modifier,
-      type: 'modifier'
-    })
-  })
-
-  outputType.forEach((output) => {
-    nodes.push({
-      id: output,
-      type: 'outputType'
-    })
-  })
+  // Assuming modifiers, outputType, and bioBased are arrays
+  nodes = nodes
+    .concat(modifiers.map((modifier) => ({ id: modifier, type: 'modifier' })))
+    .concat(outputType.map((output) => ({ id: output, type: 'outputType' })))
+    .concat(bioBased.map((bio) => ({ id: bio, type: 'bioBased' })))
 
   return nodes
 }
@@ -283,6 +289,11 @@ const setUpLinks = (data: DataStructure | undefined): Link[] => {
       const outputName = output.name.outputName
 
       addLink(output.name.outputType?.toString(), outputName?.toString(), outputName?.toString())
+      addLink(
+        output.name.bioBased?.toString(),
+        output.name.outputType?.toString(),
+        outputName?.toString()
+      )
 
       output.name.modifiers.forEach((modifier) => {
         addLink(outputName?.toString(), modifier?.toString(), outputName?.toString())

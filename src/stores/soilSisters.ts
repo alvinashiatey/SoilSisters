@@ -26,7 +26,7 @@ export const useSoilSistersStore = defineStore('soilSisters', () => {
       } else {
         isFetching.value = true
         const response = await fetch(
-          'https://script.google.com/macros/s/AKfycbxxUr5xHxcCj9PEllUVSbGDfk8VmHGstoRPtho5f9VgMWWVOTok1900meuAkEenKjfKSg/exec'
+          'https://script.google.com/macros/s/AKfycby3QDBkNEBmPXSrX1xALfRlB7X2YoIQ0WZJN62cS5WjZKqJUCwLasSwV0ve58teYkV9qw/exec'
         )
         const { data: d } = await response.json()
         data.value = d as SoilSisters[]
