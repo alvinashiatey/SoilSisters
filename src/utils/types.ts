@@ -37,8 +37,6 @@ export interface SoilSisters {
   }>
 }
 
-//
-
 export interface DataStructure {
   name: string | string[]
   children: (
@@ -51,6 +49,8 @@ export interface DataStructure {
             outputName: string | number
             ingredients: (string | number)[]
             modifiers: (string | number)[]
+            outputType: string | number
+            bioBased: string | number
           }
         }[]
       }

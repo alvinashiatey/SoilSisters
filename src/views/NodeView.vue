@@ -37,9 +37,14 @@ const container = ref<HTMLElement | null>(null)
 const hoverNode = ref<Node | null>(null)
 const isHovered = ref(false)
 const outputs = ref<Output[] | undefined>(undefined)
+const outputTypeList = ref<(string | number)[] | undefined>(undefined)
+const modifiersList = ref<(string | number)[] | undefined>(undefined)
 
 const getOutputs = (data: SoilSisters[]): Output[] | undefined => {
   const outputs = data.find((d) => d.sheetName === 'Outputs')
+  outputTypeList.value = getUniqueListOfOutputTypes(outputs)
+  modifiersList.value = getUniqueListOfModifiers(outputs)
+
   return outputs?.children?.filter((d) => {
     const keys = Object.keys(d)
     const regex = new RegExp(`Ingredient \\d+ Name`)
@@ -95,12 +100,29 @@ const getOtherIngredientsFromOutputs = (data: Output[] | undefined) => {
   return [...new Set(otherIngredients.flat())].filter((d) => d !== name)
 }
 
+const getUniqueListOfOutputTypes = (data: SoilSisters | undefined) => {
+  if (!data) return
+  const outputTypes = data.children?.map((d) => d['Output Type'])
+  return [...new Set(outputTypes)].filter(Boolean)
+}
+
+const getUniqueListOfModifiers = (data: SoilSisters | undefined) => {
+  if (!data) return
+  const modifiers = data.children?.map((d) => {
+    const keys = Object.keys(d)
+    const regex = new RegExp(`Modifier Method \\d+`)
+    return keys.filter((k) => regex.test(k)).map((k) => d[k])
+  })
+  return [...new Set(modifiers.flat())].filter(Boolean)
+}
+
 const setUpData = (data: Output[] | undefined): DataStructure | undefined => {
   if (!data) return
   const modifiers = getModifiersFromOutputs(data) ?? []
   const fabricationMethods = getFabricationMethodsFromOutputs(data) ?? []
   const outPutNames = getOutNameFromOutputs(data) ?? []
   const otherIngredients = getOtherIngredientsFromOutputs(data) ?? []
+
 
   const children = [
     otherIngredients.length > 0 && {
@@ -115,11 +137,20 @@ const setUpData = (data: Output[] | undefined): DataStructure | undefined => {
     outPutNames.length > 0 && {
       name: 'Outputs',
       children: outPutNames.map((m) => ({ name: m }))
+    },
+    (outputTypeList.value?.length ?? 0) > 0 && {
+        name: 'Output Category',
+        children: outputTypeList.value?.map((m) => ({ name: m }))
+    },
+    (modifiersList.value?.length ?? 0) > 0 && {
+      name: 'Processing Methods',
+      children: modifiersList.value?.map((m) => ({ name: m }))
     }
   ].filter(Boolean)
 
   return {
-    name: name, // Assuming 'name' is defined elsewhere in your code
+    name: name,
+    // @ts-ignore
     children: children
   }
 }

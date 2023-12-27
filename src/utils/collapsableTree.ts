@@ -20,36 +20,6 @@ const SecondaryColor = '#E6E6E6'
 const TertiaryColor = '#00B1A1'
 const QuaternaryColor = '#73D3CB'
 
-const modifiers = [
-  'cutting',
-  'shredding',
-  'milling',
-  'soaking',
-  'boiling',
-  'sterilization',
-  'mixing',
-  'soaking',
-  'straining',
-  'growing',
-  'joining',
-  'weaving',
-  'pressing',
-  'drying',
-  'heating',
-  'heating + pressing'
-]
-
-const outputType = [
-  'Textile',
-  'Textile Fiberboard',
-  'Textile Furniture',
-  'earth block',
-  'earth wall',
-  'earth render',
-  'plant dyes',
-  'textile plant dyes'
-]
-
 const bioBased = ['Biobased material', 'Biobased color']
 
 const collapsableTree = (
@@ -241,34 +211,39 @@ const collapsableTree = (
 const setupNodes = (data: DataStructure | undefined): Node[] => {
   if (!data) return []
 
-  let nodes: Node[] = []
+  const nodesFromName = new Set(['Ingredients', 'Outputs'])
+  const nodes: Node[] = []
 
-  const nodesFromName = ['Ingredients', 'Outputs']
+  // Extract and map child nodes
   data.children?.forEach((child) => {
-    if (child && child.name && nodesFromName.includes(child.name)) {
+    if (child && child.name && nodesFromName.has(child.name)) {
       child.children?.forEach((item) => {
-        if (item && 'name' in item) {
-          const nodeName =
-            // @ts-ignore
-            typeof item.name === 'string' ? item.name : item.name?.outputName?.toString() || ''
-          nodes.push({
-            id: nodeName,
-            type: child.name === 'Ingredients' ? 'ingredient' : 'output'
-          })
-        }
+        const nodeName =
+          // @ts-ignore
+          typeof item.name === 'string' ? item.name : item.name?.outputName?.toString() || ''
+        nodes.push({
+          id: nodeName,
+          type: child.name === 'Ingredients' ? 'ingredient' : 'output'
+        })
       })
     }
   })
 
-  nodes.push({ id: data.name.toString(), type: 'ingredient' })
+  nodes.push({ id: data.name?.toString(), type: 'ingredient' })
 
-  // Assuming modifiers, outputType, and bioBased are arrays
-  nodes = nodes
-    .concat(modifiers.map((modifier) => ({ id: modifier, type: 'modifier' })))
-    .concat(outputType.map((output) => ({ id: output, type: 'outputType' })))
-    .concat(bioBased.map((bio) => ({ id: bio, type: 'bioBased' })))
+  const mapChildrenToNodes = (children: { name: string | number }[] | undefined, type: string) =>
+    children?.map((child) => ({ id: child.name?.toString(), type })) ?? []
+
+  // @ts-ignore
+  const processingMethods = // @ts-ignore
+    data.children?.find((child) => child.name === 'Processing Methods')?.children
+  // @ts-ignore
+  const outputCategory = data.children?.find((child) => child.name === 'Output Category')?.children
 
   return nodes
+    .concat(mapChildrenToNodes(processingMethods, 'modifier'))
+    .concat(mapChildrenToNodes(outputCategory, 'outputType'))
+    .concat(bioBased.map((bio) => ({ id: bio, type: 'bioBased' })))
 }
 
 const setUpLinks = (data: DataStructure | undefined): Link[] => {

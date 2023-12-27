@@ -14,12 +14,6 @@ const SecondaryColor = '#E6E6E6'
 const TertiaryColor = '#00B1A1'
 const QuaternaryColor = '#73D3CB'
 
-const props = defineProps({
-  selectItem: {
-    type: Object,
-    required: true
-  }
-})
 
 const nodeGroupsRef = ref<any | null>(null)
 const linkGroupsRef = ref<any | null>(null)
@@ -326,24 +320,6 @@ watch(
   }
 )
 
-watch(
-  () => props.selectItem,
-  (newVal, oldVal) => {
-    const nodeGroups = nodeGroupsRef.value
-    if (!newVal) return
-    nodeGroups.each(function (d: Node) {
-      if (d.name === newVal.name) {
-        const event = new MouseEvent('mouseover')
-        // @ts-ignore
-        this.dispatchEvent(event)
-      } else if (d.name === oldVal.name) {
-        const event = new MouseEvent('mouseout')
-        // @ts-ignore
-        this.dispatchEvent(event)
-      }
-    })
-  }
-)
 </script>
 
 <template>
