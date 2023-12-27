@@ -238,7 +238,7 @@ onMounted(() => {
 
 #details {
   position: fixed;
-  bottom: 0;
+  top: 2rem;
   left: 0;
   width: 25rem;
   max-width: fit-content;
