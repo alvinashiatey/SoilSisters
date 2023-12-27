@@ -1,10 +1,13 @@
 <template>
   <div v-if="showDetails" class="site__description" ref="details">
     <h3>
-      Soil Sisters aims to investigate a new paradigm for connecting regional biomass supply chains
-      to the building material life cycle, in which improving soil health underpins intersectoral
-      material performance. The open-source “Soil Sisters” Materials Library aims to showcase a
-      growing library of biobased construction materials and biobased colour.
+      Soil Sisters investigates a new paradigm for connecting regional biomass supply chains to the
+      building material life cycle, in which improving soil health underpins intersectoral material
+      performance.
+    </h3>
+    <h3>
+      This open-source “Soil Sisters” Materials Library showcases a growing library of biobased
+      construction materials and biobased colour.
     </h3>
   </div>
 </template>
