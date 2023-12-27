@@ -95,9 +95,9 @@ const collapsableTree = (
       .attr('text-anchor', 'middle') // Center-align text
       .attr('alignment-baseline', 'middle')
       .attr('transform', `rotate(-90, ${x}, ${y})`) // Rotate the text -90 degrees
-      .attr('font-size', '14px')
+      .attr('font-size', '20px')
       .attr('font-weight', 'bold')
-      .attr('fill', '#000000')
+      .attr('fill', SecondaryColor)
   }
 
   function positionNodes(nodes: Node[]) {
