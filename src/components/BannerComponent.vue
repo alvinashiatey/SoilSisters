@@ -5,6 +5,7 @@
       building material life cycle, in which improving soil health underpins intersectoral material
       performance.
     </h3>
+    <br>
     <h3>
       This open-source “Soil Sisters” Materials Library showcases a growing library of biobased
       construction materials and biobased colour.
