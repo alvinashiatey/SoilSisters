@@ -1,7 +1,7 @@
 <template>
   <div id="sidebar">
     <div v-show="showDetails" ref="details" class="sidebar__details">
-      <button @click="showDetails = false">
+      <button @click="handleClosingDetails">
         <!-- svg close -->
         <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <line x1="3" y1="3" x2="21" y2="21" stroke="#bebebe" stroke-width="2" />
@@ -59,6 +59,12 @@ const details = ref<HTMLElement | null>(null)
 const showDetails = ref(false)
 const itemClicked = ref(false)
 
+const handleClosingDetails = () => {
+  showDetails.value = false
+  itemClicked.value = false
+  emit('update:selectedItem', null)
+}
+
 const updateDetails = (item: { [key: string]: string | number }, detailsWrapper: HTMLElement) => {
   const ignoreKeys = ['image', 'Image', 'name', 'Name', 'Output Name']
   detailsWrapper.innerHTML = ''
@@ -83,7 +89,7 @@ const updateDetails = (item: { [key: string]: string | number }, detailsWrapper:
 const handleClick = (item: { [key: string]: string | number }) => {
   console.log(item)
   showDetails.value = true
-  itemClicked.value = !itemClicked.value
+  itemClicked.value = true
   const titleElement = details.value!.querySelector('p.title') as HTMLElement
   const imageElement = details.value!.querySelector('.item__image') as HTMLElement
   const detailsWrapper = details.value!.querySelector('.details__wrapper') as HTMLElement
@@ -95,6 +101,7 @@ const handleClick = (item: { [key: string]: string | number }) => {
 }
 
 const handleMouseOver = (item: { [key: string]: string | number }) => {
+  if (!itemClicked.value)
   emit('update:selectedItem', item)
 }
 

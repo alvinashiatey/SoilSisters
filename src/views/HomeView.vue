@@ -15,8 +15,10 @@ const TertiaryColor = '#00B1A1'
 const QuaternaryColor = '#73D3CB'
 
 const nodeGroupsRef = ref<any | null>(null)
-const linkGroupsRef = ref<any | null>(null)
-const linksRef = ref<Link[] | null>(null)
+const svgRef = ref<any | null>(null)
+const zoomRef = ref<any | null>(null)
+// const linkGroupsRef = ref<any | null>(null)
+// const linksRef = ref<Link[] | null>(null)
 
 const store = useSoilSistersStore()
 store.fetchSoilSisters()
@@ -180,7 +182,7 @@ const updateNodeStyles = (
 
 const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
   if (!links) return
-  linksRef.value = links
+  // linksRef.value = links
   const width = window.innerWidth,
     height = window.innerHeight
   const svg = d3
@@ -190,6 +192,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .attr('height', height)
     .style('font', '16px sans-serif')
 
+  svgRef.value = svg
   const g = svg.append('g')
 
   const zoom = d3.zoom().on('zoom', (event) => {
@@ -199,6 +202,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
   //   return event.type !== 'wheel'
   // })
 
+  zoomRef.value = zoom;
   svg.call(zoom as any)
 
   const linkGroups = g.append('g').attr('class', 'links')
@@ -210,7 +214,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .attr('class', 'node')
     .attr('data-name', (d) => d.name?.toString())
   nodeGroupsRef.value = nodeGroups
-  linkGroupsRef.value = linkGroups
+  // linkGroupsRef.value = linkGroups
 
   const linkForce = d3
     .forceLink()
@@ -305,6 +309,39 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .attr('opacity', 0)
 }
 
+const handleSideBarEmitted = (item: any) => {
+  if (item !== null) {
+    const node = nodeGroupsRef.value?.filter((d: Node) => d.name === item.name)
+    const event = new MouseEvent('mouseover')
+    node?.node()?.dispatchEvent(event)
+  } else {
+    const nodes = nodeGroupsRef.value?.nodes()
+    nodes?.forEach((n: any) => {
+      const event = new MouseEvent('mouseout')
+      n.dispatchEvent(event)
+    })
+  }
+
+  if (item !== null && svgRef.value && zoomRef.value) {
+    const node = nodeGroupsRef.value?.filter((d: Node) => d.name === item.name).node();
+
+    if (node) {
+      // @ts-ignore
+      const { x, y } = d3.select(node).datum();
+      const centerX = svgRef.value.attr('width') / 2;
+      const centerY = svgRef.value.attr('height') / 2;
+      const scale = 1; // Adjust scale if you want to zoom in/out
+      const transform = d3.zoomIdentity.translate(centerX - x, centerY - y).scale(scale);
+
+      svgRef.value.transition().duration(500).call(zoomRef.value.transform, transform);
+    }
+  } else {
+    svgRef.value.transition().duration(500).call(zoomRef.value.transform, d3.zoomIdentity);
+  }
+
+
+}
+
 onMounted(() => {
   if (!store.data) return
   const { links, nodes } = getIngredients(store.data)
@@ -319,21 +356,8 @@ watch(
   }
 )
 
-const handleSideBarEmitted = (item: any) => {
-  if (item !== null) {
-    const node = nodeGroupsRef.value?.filter((d: Node) => d.name === item.name)
-    const event = new MouseEvent('mouseover')
-    node?.node()?.dispatchEvent(event)
-  } else {
-    const nodes = nodeGroupsRef.value?.nodes()
-    nodes?.forEach((n: any) => {
-      const event = new MouseEvent('mouseout')
-      n.dispatchEvent(event)
-    })
-  }
 
 
-}
 </script>
 
 <template>
