@@ -123,7 +123,6 @@ const setUpData = (data: Output[] | undefined): DataStructure | undefined => {
   const outPutNames = getOutNameFromOutputs(data) ?? []
   const otherIngredients = getOtherIngredientsFromOutputs(data) ?? []
 
-
   const children = [
     otherIngredients.length > 0 && {
       name: 'Ingredients',
@@ -139,8 +138,8 @@ const setUpData = (data: Output[] | undefined): DataStructure | undefined => {
       children: outPutNames.map((m) => ({ name: m }))
     },
     (outputTypeList.value?.length ?? 0) > 0 && {
-        name: 'Output Category',
-        children: outputTypeList.value?.map((m) => ({ name: m }))
+      name: 'Output Category',
+      children: outputTypeList.value?.map((m) => ({ name: m }))
     },
     (modifiersList.value?.length ?? 0) > 0 && {
       name: 'Processing Methods',

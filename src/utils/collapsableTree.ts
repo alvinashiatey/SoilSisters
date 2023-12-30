@@ -15,10 +15,12 @@ export interface Output {
   }[]
 }
 
-const PrimaryColor = '#181818'
+// const PrimaryColor = '#181818'
 const SecondaryColor = '#E6E6E6'
 const TertiaryColor = '#00B1A1'
 const QuaternaryColor = '#73D3CB'
+
+let isClickedOnLink = false
 
 const bioBased = ['Biobased material', 'Biobased color']
 
@@ -158,27 +160,49 @@ const collapsableTree = (
     .selectAll('text')
     .data(nodes)
     .attr('cursor', 'pointer')
+    .on('click', function (event, d) {
+      if (d.type === 'output') {
+        if (clicked.value?.id === d.id) {
+          console.log('reset', clicked.value, d)
+          linkGroup
+            .selectAll('path')
+            .attr('stroke-opacity', 1)
+            .attr('stroke', SecondaryColor)
+            .attr('stroke-width', 1)
+          clicked.value = null
+          isClickedOnLink = false
+        } else {
+          linkGroup
+            .selectAll('path')
+            .attr('stroke-opacity', (link) => ((link as Link).type === d.id ? 1 : 0))
+            .filter((link) => (link as Link).type === d.id)
+            .attr('stroke', QuaternaryColor)
+            .attr('stroke-width', 2)
+          clicked.value = d
+          isClickedOnLink = true
+        }
+      }
+    })
     .on('mouseover', function (event, d) {
       if (d.type === 'output') {
+        if (isClickedOnLink) return
         linkGroup
           .selectAll('path')
           .attr('stroke-opacity', (link) => ((link as Link).type === d.id ? 1 : 0))
           .filter((link) => (link as Link).type === d.id)
           .attr('stroke', QuaternaryColor)
           .attr('stroke-width', 2)
-        clicked.value = d
       }
     })
     .on('mouseout', function (event, d) {
-      // if output highlight all links
       if (d.type === 'output') {
+        if (isClickedOnLink) return
         linkGroup
           .selectAll('path')
           .attr('stroke-opacity', 1) // Reset opacity for all links
           .filter((link) => (link as Link).type === d.id)
           .attr('stroke', SecondaryColor)
           .attr('stroke-width', 1)
-        // clicked.value = null
       }
     })
 

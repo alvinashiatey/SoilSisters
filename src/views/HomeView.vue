@@ -14,7 +14,6 @@ const SecondaryColor = '#E6E6E6'
 const TertiaryColor = '#00B1A1'
 const QuaternaryColor = '#73D3CB'
 
-
 const nodeGroupsRef = ref<any | null>(null)
 const linkGroupsRef = ref<any | null>(null)
 const linksRef = ref<Link[] | null>(null)
@@ -319,7 +318,6 @@ watch(
     d3SetupWithLinks(links, nodes)
   }
 )
-
 </script>
 
 <template>
