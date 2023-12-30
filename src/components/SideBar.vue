@@ -15,11 +15,11 @@
       <div class="details__wrapper"></div>
     </div>
     <div class="sidebar__list">
-      <div class="loading" v-if="store.isFetching">
+      <div class="loading" v-if="props.store.isFetching">
         <h4>Loading...</h4>
       </div>
       <ul id="list">
-        <li v-for="d in store.data" :key="d.sheetName" class="list-group-item">
+        <li v-for="d in props.store.data" :key="d.sheetName" class="list-group-item">
           <p class="list-group-title">{{ d.sheetName }}</p>
           <ul class="list-group">
             <li
@@ -27,6 +27,8 @@
               :key="c.id"
               class="list-sub-group-item"
               @click="handleClick(c)"
+              @mouseover="handleMouseOver(c)"
+              @mouseout="handleMouseOut()"
             >
               {{ c.name || c['Output Name'] }}
             </li>
@@ -38,17 +40,24 @@
 </template>
 
 <script setup lang="ts">
-import { useSoilSistersStore } from '@/stores/soilSisters'
 import { createLinkElement, updateImage, isUrl, updateTitle } from '@/utils/helpers'
 import { ref } from 'vue'
 
+const props = defineProps({
+  store: {
+    type: Object,
+    required: true,
+  },
+})
+
 const emit = defineEmits(['update:selectedItem'])
 
-const store = useSoilSistersStore()
-store.fetchSoilSisters()
+// const store = useSoilSistersStore()
+// store.fetchSoilSisters()
 
 const details = ref<HTMLElement | null>(null)
 const showDetails = ref(false)
+const itemClicked = ref(false)
 
 const updateDetails = (item: { [key: string]: string | number }, detailsWrapper: HTMLElement) => {
   const ignoreKeys = ['image', 'Image', 'name', 'Name', 'Output Name']
@@ -72,7 +81,9 @@ const updateDetails = (item: { [key: string]: string | number }, detailsWrapper:
 }
 
 const handleClick = (item: { [key: string]: string | number }) => {
+  console.log(item)
   showDetails.value = true
+  itemClicked.value = !itemClicked.value
   const titleElement = details.value!.querySelector('p.title') as HTMLElement
   const imageElement = details.value!.querySelector('.item__image') as HTMLElement
   const detailsWrapper = details.value!.querySelector('.details__wrapper') as HTMLElement
@@ -82,6 +93,16 @@ const handleClick = (item: { [key: string]: string | number }) => {
   updateDetails(item, detailsWrapper)
   emit('update:selectedItem', item)
 }
+
+const handleMouseOver = (item: { [key: string]: string | number }) => {
+  emit('update:selectedItem', item)
+}
+
+const handleMouseOut = () => {
+  if (!itemClicked.value)
+  emit('update:selectedItem', null)
+}
+
 </script>
 
 <style lang="scss">

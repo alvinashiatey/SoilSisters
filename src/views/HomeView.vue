@@ -52,7 +52,7 @@ const getIngredients = (data: SoilSisters[]) => {
     })
     return links
   })
-  // find out how many times each ingredient is present in the allIngredients array
+
   const counts = allIngredients.reduce(
     (acc, curr) => {
       acc[curr] = (acc[curr] || 0) + 1
@@ -318,11 +318,27 @@ watch(
     d3SetupWithLinks(links, nodes)
   }
 )
+
+const handleSideBarEmitted = (item: any) => {
+  if (item !== null) {
+    const node = nodeGroupsRef.value?.filter((d: Node) => d.name === item.name)
+    const event = new MouseEvent('mouseover')
+    node?.node()?.dispatchEvent(event)
+  } else {
+    const nodes = nodeGroupsRef.value?.nodes()
+    nodes?.forEach((n: any) => {
+      const event = new MouseEvent('mouseout')
+      n.dispatchEvent(event)
+    })
+  }
+
+
+}
 </script>
 
 <template>
   <main>
-    <SideBar />
+    <SideBar :store="store" @update:selectedItem="handleSideBarEmitted" />
     <div class="wrapper">
       <div class="loading" v-if="store.isFetching">
         <h4>Loading...</h4>
