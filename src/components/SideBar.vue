@@ -72,7 +72,6 @@ const updateDetails = (item: { [key: string]: string | number }, detailsWrapper:
   Object.entries(item).forEach(([key, value]) => {
     if (!ignoreKeys.includes(key)) {
       const p = document.createElement('p')
-
       if (typeof value === 'string' && isUrl(value)) {
         const linkElement = createLinkElement(value)
         p.innerHTML = `<span class="item__key">${key}:</span> `
@@ -80,7 +79,6 @@ const updateDetails = (item: { [key: string]: string | number }, detailsWrapper:
       } else {
         p.innerHTML = `<span class="item__key">${key}:</span><span class="detail_content">${value}</span>`
       }
-
       detailsWrapper.appendChild(p)
     }
   })

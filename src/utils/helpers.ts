@@ -1,6 +1,10 @@
 function convertDriveLinkToDirectLink(driveLink: string) {
-  const fileId = driveLink.match(/[-\w]{25,}/)
-  return fileId ? `https://drive.google.com/uc?export=view&id=${fileId[0]}` : ''
+  if (driveLink.includes('drive.google.com')) {
+    const fileId = driveLink.match(/[-\w]{25,}/)
+    return fileId ? `https://drive.google.com/uc?export=view&id=${fileId[0]}` : driveLink
+  } else {
+    return driveLink
+  }
 }
 
 const createLinkElement = (url: string) => {

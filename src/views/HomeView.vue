@@ -310,37 +310,35 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
 }
 
 const handleSideBarEmitted = (item: any) => {
-  if (item !== null) {
-    const node = nodeGroupsRef.value?.filter((d: Node) => d.name === item.name)
-    const event = new MouseEvent('mouseover')
-    node?.node()?.dispatchEvent(event)
-  } else {
-    const nodes = nodeGroupsRef.value?.nodes()
-    nodes?.forEach((n: any) => {
-      const event = new MouseEvent('mouseout')
-      n.dispatchEvent(event)
-    })
-  }
+  const zoomToNode = (node: SVGGElement) => {
+    // @ts-ignore
+    const { x, y } = d3.select(node).datum();
+    const centerX = svgRef.value?.attr('width') / 2;
+    const centerY = svgRef.value?.attr('height') / 2;
+    const scale = 1;
+    const transform = d3.zoomIdentity.translate(centerX - x, centerY - y).scale(scale);
+    svgRef.value?.transition().duration(500).call(zoomRef.value.transform, transform);
+  };
 
-  if (item !== null && svgRef.value && zoomRef.value) {
-    const node = nodeGroupsRef.value?.filter((d: Node) => d.name === item.name).node();
+  const resetZoom = () => {
+    svgRef.value?.transition().duration(500).call(zoomRef.value.transform, d3.zoomIdentity);
+  };
 
-    if (node) {
-      // @ts-ignore
-      const { x, y } = d3.select(node).datum();
-      const centerX = svgRef.value.attr('width') / 2;
-      const centerY = svgRef.value.attr('height') / 2;
-      const scale = 1; // Adjust scale if you want to zoom in/out
-      const transform = d3.zoomIdentity.translate(centerX - x, centerY - y).scale(scale);
-
-      svgRef.value.transition().duration(500).call(zoomRef.value.transform, transform);
+  const dispatchEventToNodes = (eventType: string) => {
+    const event = new MouseEvent(eventType);
+    if (item !== null) {
+      const node = nodeGroupsRef.value?.filter((d: Node) => d.name === item.name).node();
+      node?.dispatchEvent(event);
+      if (node) zoomToNode(node);
+    } else {
+      nodeGroupsRef.value?.nodes().forEach((n: Element) => n.dispatchEvent(event));
+      resetZoom();
     }
-  } else {
-    svgRef.value.transition().duration(500).call(zoomRef.value.transform, d3.zoomIdentity);
-  }
+  };
 
+  dispatchEventToNodes(item !== null ? 'mouseover' : 'mouseout');
+};
 
-}
 
 onMounted(() => {
   if (!store.data) return
