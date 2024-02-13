@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import * as d3 from 'd3'
 import { useSoilSistersStore } from '@/stores/soilSisters'
-import type { SoilSisters } from '@/stores/soilSisters'
+import type { SoilSisters, SoilSister } from '@/stores/soilSisters'
 import { watch, onMounted, ref } from 'vue'
 import type { Selection, BaseType } from 'd3'
 import plantIcon from '@/assets/icons/Plants-02.svg'
@@ -72,6 +72,14 @@ const getIngredients = (data: SoilSisters[]) => {
     type: ingredientsArray.includes(d) ? 'ingredient' : 'output'
   }))
   return { links: linksFlat, nodes }
+}
+
+const isIngredients = (data: SoilSister[]): SoilSister[] => {
+  return data.map((d) => d.ingredient === 'TRUE' ? d : null).filter((d): d is SoilSister => d !== null);
+}
+
+const isOutputs = (data: SoilSister[]): SoilSister[] => {
+  return data.map((d) => d.ingredient !== 'TRUE' ? d : null).filter((d): d is SoilSister => d !== null);
 }
 
 const randomString = () => {
@@ -340,19 +348,19 @@ const handleSideBarEmitted = (item: any) => {
 };
 
 
-onMounted(() => {
-  if (!store.data) return
-  const { links, nodes } = getIngredients(store.data)
-  d3SetupWithLinks(links, nodes)
-})
+// onMounted(() => {
+//   if (!store.data) return
+//   const { links, nodes } = getIngredients(store.data)
+//   d3SetupWithLinks(links, nodes)
+// })
 
-watch(
-  () => store.data,
-  () => {
-    const { links, nodes } = getIngredients(store.data)
-    d3SetupWithLinks(links, nodes)
-  }
-)
+// watch(
+//   () => store.data,
+//   () => {
+//     const { links, nodes } = getIngredients(store.data)
+//     d3SetupWithLinks(links, nodes)
+//   }
+// )
 
 
 
@@ -360,7 +368,8 @@ watch(
 
 <template>
   <main>
-    <SideBar :store="store" @update:selectedItem="handleSideBarEmitted" />
+    <SideBar pos="right" sheetName="Demand" :children=isIngredients(store.data[0].children) @update:selectedItem="handleSideBarEmitted" />
+    <SideBar pos="left" sheetName="Outputs" :children=isOutputs(store.data[0].children) @update:selectedItem="handleSideBarEmitted" />
     <div class="wrapper">
       <div class="loading" v-if="store.isFetching">
         <h4>Loading...</h4>

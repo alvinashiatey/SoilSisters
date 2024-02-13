@@ -1,5 +1,5 @@
 <template>
-  <div id="sidebar">
+  <div class="sidebar" ref="sidebar">
     <div v-show="showDetails" ref="details" class="sidebar__details">
       <button @click="handleClosingDetails">
         <!-- svg close -->
@@ -15,24 +15,14 @@
       <div class="details__wrapper"></div>
     </div>
     <div class="sidebar__list">
-      <div class="loading" v-if="props.store.isFetching">
-        <h4>Loading...</h4>
-      </div>
       <ul id="list">
-        <li v-for="d in props.store.data" :key="d.sheetName" class="list-group-item">
-          <p class="list-group-title">{{ d.sheetName }}</p>
-          <ul class="list-group">
-            <li
-              v-for="c in d.children"
-              :key="c.id"
-              class="list-sub-group-item"
-              @click="handleClick(c)"
-              @mouseover="handleMouseOver(c)"
-              @mouseout="handleMouseOut()"
-            >
-              {{ c.name || c['Output Name'] }}
-            </li>
-          </ul>
+        <p class="list-group-title">{{ sheetName }}</p>
+        <li v-for="d in props.children" :key="d['Entry Name']" class="list-group-item">
+         <p class="list-sub-group-item" @click="handleClick(d)"
+              @mouseover="handleMouseOver(d)"
+              @mouseout="handleMouseOut()">
+            {{ d['Entry Name'] }}
+         </p>
         </li>
       </ul>
     </div>
@@ -41,20 +31,29 @@
 
 <script setup lang="ts">
 import { createLinkElement, updateImage, isUrl, updateTitle } from '@/utils/helpers'
-import { ref } from 'vue'
+import type { SoilSister } from '@/stores/soilSisters';
+import { ref, onMounted } from 'vue'
 
 const props = defineProps({
-  store: {
-    type: Object,
+  sheetName: {
+    type: String,
     required: true,
   },
+  children: {
+    type: Array as () => SoilSister[],
+    required: true,
+  },
+  pos: {
+    type: String,
+    required: true,
+  }
 })
+
+
 
 const emit = defineEmits(['update:selectedItem'])
 
-// const store = useSoilSistersStore()
-// store.fetchSoilSisters()
-
+const sidebar = ref<HTMLElement | null>(null)
 const details = ref<HTMLElement | null>(null)
 const showDetails = ref(false)
 const itemClicked = ref(false)
@@ -65,8 +64,8 @@ const handleClosingDetails = () => {
   emit('update:selectedItem', null)
 }
 
-const updateDetails = (item: { [key: string]: string | number }, detailsWrapper: HTMLElement) => {
-  const ignoreKeys = ['image', 'Image', 'name', 'Name', 'Output Name']
+const updateDetails = (item: SoilSister, detailsWrapper: HTMLElement) => {
+  const ignoreKeys = ['Image Link', 'Entry Name',]
   detailsWrapper.innerHTML = ''
 
   Object.entries(item).forEach(([key, value]) => {
@@ -84,8 +83,7 @@ const updateDetails = (item: { [key: string]: string | number }, detailsWrapper:
   })
 }
 
-const handleClick = (item: { [key: string]: string | number }) => {
-  console.log(item)
+const handleClick = (item: SoilSister) => {
   showDetails.value = true
   itemClicked.value = true
   const titleElement = details.value!.querySelector('p.title') as HTMLElement
@@ -98,7 +96,7 @@ const handleClick = (item: { [key: string]: string | number }) => {
   emit('update:selectedItem', item)
 }
 
-const handleMouseOver = (item: { [key: string]: string | number }) => {
+const handleMouseOver = (item: SoilSister) => {
   if (!itemClicked.value)
   emit('update:selectedItem', item)
 }
@@ -108,21 +106,33 @@ const handleMouseOut = () => {
   emit('update:selectedItem', null)
 }
 
+onMounted(() => {
+  props.pos === 'right' ? sidebar.value?.classList.add('right') : sidebar.value?.classList.add('left')
+})
+
 </script>
 
-<style lang="scss">
-#sidebar {
+<style lang="scss" scoped>
+.sidebar {
   position: fixed;
   margin: 1rem;
   pointer-events: none;
   width: 90%;
   height: 100%;
-  right: 0;
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
   padding-block: 2rem;
   --bg-clr: #51834315;
+
+  &.right {
+    right: 0;
+  }
+
+  &.left {
+    left: 0;
+    flex-direction: row-reverse;
+  }
 
   & > * {
     pointer-events: auto;

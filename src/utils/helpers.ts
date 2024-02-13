@@ -1,3 +1,5 @@
+import type { SoilSister } from '@/stores/soilSisters'
+
 function convertDriveLinkToDirectLink(driveLink: string) {
   if (driveLink.includes('drive.google.com')) {
     const fileId = driveLink.match(/[-\w]{25,}/)
@@ -15,15 +17,15 @@ const createLinkElement = (url: string) => {
   return a
 }
 
-const updateTitle = (item: { [key: string]: string | number }, titleElement: HTMLElement) => {
-  titleElement.innerText = String(item.name || item['Output Name'])
+const updateTitle = (item: SoilSister, titleElement: HTMLElement) => {
+  titleElement.innerText = String(item['Entry Name'])
 }
 
-const updateImage = (item: { [key: string]: string | number }, imageElement: HTMLElement) => {
-  const imageUrl = item['image'] || item['Image']
+const updateImage = (item: SoilSister, imageElement: HTMLElement) => {
+  const imageUrl = item['Image Link']
   if (imageUrl) {
     imageElement.setAttribute('src', convertDriveLinkToDirectLink(String(imageUrl)))
-    imageElement.setAttribute('alt', String(item.name || item['Output Name']))
+    imageElement.setAttribute('alt', String(item['Entry Name']))
     imageElement.onload = () => {
       // getDominantColor(imageElement as HTMLImageElement)
     }
