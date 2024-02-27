@@ -243,7 +243,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
     .forceSimulation(nodes as any)
     .force('charge', d3.forceManyBody())
     .force('center', d3.forceCenter(width/2, height/2))
-    .force('link', linkForce)
+    // .force('link', linkForce)
     .force('collision', d3.forceCollide().radius(30))
     .on('tick', () => {
       nodeGroups.attr('transform', (d) => `translate(${d.x},${d.y})`)
@@ -374,6 +374,7 @@ watch(
   () => store.data,
   () => {
     const { links, nodes } = getIngredients(store.data)
+    console.log(links, nodes)
     d3SetupWithLinks(links, nodes)
   }
 )
