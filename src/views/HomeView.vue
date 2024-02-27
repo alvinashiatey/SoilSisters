@@ -187,11 +187,18 @@ const updateNodeStyles = (
 
 const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
   if (!links) return
+  console.log(links, nodes)
   // linksRef.value = links
   const width = window.innerWidth,
     height = window.innerHeight
-  const svg = d3
+  // if svg already exists, remove it
+  d3
     .select('#container')
+    .selectAll('svg')
+    .remove()
+  
+   let svg = d3
+   .select('#container')
     .append('svg')
     .attr('width', width)
     .attr('height', height)
@@ -361,7 +368,6 @@ watch(
   () => {
     console.log('data changed')
     const { links, nodes } = getIngredients(store.data)
-    console.log(links, nodes)
     d3SetupWithLinks(links, nodes)
   }
 )

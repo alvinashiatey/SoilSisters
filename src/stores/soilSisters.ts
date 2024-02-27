@@ -86,7 +86,7 @@ export const useSoilSistersStore = defineStore('soilSisters', () => {
   const initializeData = () => {
     if (originalData.value.length > 0) {
       getCountries()
-      filterDataByCountry(countries.value[1])
+      filterDataByCountry(countries.value[0])
     }
   }
 
