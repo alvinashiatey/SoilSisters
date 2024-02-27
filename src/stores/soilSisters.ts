@@ -86,7 +86,7 @@ export const useSoilSistersStore = defineStore('soilSisters', () => {
   const initializeData = () => {
     if (originalData.value.length > 0) {
       getCountries()
-      filterDataByCountry(countries.value[0])
+      filterDataByCountry(countries.value[1])
     }
   }
 
@@ -128,7 +128,7 @@ export interface Supply {
   id?: string
   'Entry Name': string
   Country: string
-  'FAO Crop Yield (2022), (g\\ha)': string
+  FAO: string
   'Regenerative Farming Group': string
   'Image Link': string
   ingredient: string
@@ -144,7 +144,7 @@ export interface Demand {
   Country: string
   'Material Bank': string
   'Non-Toxic Circular': string
-  'Carbon Sink ': string
+  'Carbon Sink': string
   'Regenerative Farming': string
   'Image Link': string
   ingredient: string

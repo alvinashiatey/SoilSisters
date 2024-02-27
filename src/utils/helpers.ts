@@ -43,32 +43,32 @@ const isUrl = (value: string) => {
   }
 }
 
-function updateDetails(
-  item: { [key: string]: string | number },
-  detailsWrapper: HTMLElement,
-  specificKeys: string[] = []
-) {
-  const ignoreKeys = ['image', 'Image', 'name', 'Name', 'Output Name']
+const updateDetails = (item: Supply | Demand, detailsWrapper: HTMLElement) => {
+  const ignoreKeys = [
+    'Image Link',
+    'Entry Name',
+    'id',
+    'ingredient',
+    'Material Bank',
+    'Non-Toxic Circular',
+    'Carbon Sink',
+    'Regenerative Farming',
+    'Regenerative Farming Group'
+  ]
   detailsWrapper.innerHTML = ''
 
-  const keysToUse =
-    specificKeys.length > 0
-      ? specificKeys
-      : Object.keys(item).filter((key) => !ignoreKeys.includes(key))
-
-  keysToUse.forEach((key) => {
-    const value = item[key]
-    const p = document.createElement('p')
-
-    if (typeof value === 'string' && isUrl(value)) {
-      const linkElement = createLinkElement(value)
-      p.innerHTML = `<span class="item__key">${key}:</span> `
-      p.appendChild(linkElement)
-    } else if (value !== undefined) {
-      p.innerHTML = `<span class="item__key">${key}:</span><br><span class="detail_content">${value}</span>`
+  Object.entries(item).forEach(([key, value]) => {
+    if (!ignoreKeys.includes(key)) {
+      const p = document.createElement('p')
+      if (typeof value === 'string' && isUrl(value)) {
+        const linkElement = createLinkElement(value)
+        p.innerHTML = `<span class="item__key">${key}:</span> `
+        p.appendChild(linkElement)
+      } else {
+        p.innerHTML = `<span class="item__key">${key}:</span>&nbsp<span class="detail_content">${value}</span>`
+      }
+      detailsWrapper.appendChild(p)
     }
-
-    detailsWrapper.appendChild(p)
   })
 }
 

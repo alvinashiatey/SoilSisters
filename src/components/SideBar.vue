@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { createLinkElement, updateImage, isUrl, updateTitle } from '@/utils/helpers'
+import { createLinkElement, updateImage, isUrl, updateTitle, updateDetails } from '@/utils/helpers'
 import type { Supply, Demand } from '@/stores/soilSisters';
 import { ref, onMounted } from 'vue'
 
@@ -62,25 +62,6 @@ const handleClosingDetails = () => {
   showDetails.value = false
   itemClicked.value = false
   emit('update:selectedItem', null)
-}
-
-const updateDetails = (item: (Supply | Demand), detailsWrapper: HTMLElement) => {
-  const ignoreKeys = ['Image Link', 'Entry Name',]
-  detailsWrapper.innerHTML = ''
-
-  Object.entries(item).forEach(([key, value]) => {
-    if (!ignoreKeys.includes(key)) {
-      const p = document.createElement('p')
-      if (typeof value === 'string' && isUrl(value)) {
-        const linkElement = createLinkElement(value)
-        p.innerHTML = `<span class="item__key">${key}:</span> `
-        p.appendChild(linkElement)
-      } else {
-        p.innerHTML = `<span class="item__key">${key}:</span><span class="detail_content">${value}</span>`
-      }
-      detailsWrapper.appendChild(p)
-    }
-  })
 }
 
 const handleClick = (item: (Supply | Demand)) => {

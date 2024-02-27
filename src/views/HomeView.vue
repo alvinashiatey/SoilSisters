@@ -66,6 +66,7 @@ const getIngredients = (data: SoilSisters[]) => {
   const nodes = combinedArray.map((d) => ({
     name: d,
     amount: counts[d] ?? 0,
+    fao: parseInt(ingredientsArray.includes(d) ? (ingredients?.children?.find((i) => (i as Supply)['Entry Name'] === d) as Supply)?.FAO : (outputs?.children?.find((i) => i['Entry Name'] === d) as Supply)?.FAO),
     type: ingredientsArray.includes(d) ? 'ingredient' : 'output'
   }))
   return { links: linksFlat, nodes }
@@ -84,6 +85,10 @@ const randomString = () => {
   return r.replace(/\d/g, '')
 }
 
+const mapRange = (value: number, x1: number, y1: number, x2: number, y2: number) => {
+  return ((value - x1) * (y2 - x2)) / (y1 - x1) + x2
+}
+
 interface Link {
   id: string
   source: number
@@ -95,6 +100,7 @@ interface Link {
 interface Node {
   name: string | number
   amount?: number
+  fao?: number
   x?: number
   y?: number
   type: string
@@ -187,7 +193,6 @@ const updateNodeStyles = (
 
 const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
   if (!links) return
-  console.log(links, nodes)
   // linksRef.value = links
   const width = window.innerWidth,
     height = window.innerHeight
@@ -231,13 +236,13 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
   const linkForce = d3
     .forceLink()
     .links(links as any)
-    .distance(100)
-    .strength(0.001)
+    .distance(0.5)
+    .strength(0.0001)
 
   const simulation = d3
     .forceSimulation(nodes as any)
-    .force('charge', d3.forceManyBody().strength(-30))
-    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('charge', d3.forceManyBody())
+    .force('center', d3.forceCenter(width/2, height/2))
     .force('link', linkForce)
     .force('collision', d3.forceCollide().radius(30))
     .on('tick', () => {
@@ -278,9 +283,11 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
       })
     })
 
+    const maxFao = d3.max(nodes, (d) => d.fao) ?? 500000
+
   nodeGroups
     .append('circle')
-    .attr('r', (d) => (d.amount ? d.amount : 0))
+    .attr('r', (d) => (d.fao ? mapRange(d.fao, 0, maxFao, 10, 40) : 0))
     .attr('fill', SecondaryColor)
     .attr('cy', 0)
     .attr('cx', 0)
@@ -366,7 +373,6 @@ onMounted(() => {
 watch(
   () => store.data,
   () => {
-    console.log('data changed')
     const { links, nodes } = getIngredients(store.data)
     d3SetupWithLinks(links, nodes)
   }
