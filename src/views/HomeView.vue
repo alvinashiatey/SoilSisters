@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import * as d3 from 'd3'
 import { useSoilSistersStore } from '@/stores/soilSisters'
-import type { SoilSisters, SoilSister } from '@/stores/soilSisters'
+import type { SoilSisters, SoilSister, Supply, Demand } from '@/stores/soilSisters'
 import { watch, onMounted, ref } from 'vue'
 import type { Selection, BaseType } from 'd3'
 import plantIcon from '@/assets/icons/Plants-02.svg'
@@ -26,22 +26,18 @@ store.fetchSoilSisters()
 const router = useRouter()
 
 const getIngredients = (data: SoilSisters[]) => {
-  const outputs = data.find((d) => d.sheetName === 'Outputs')
-  const ingredients = data.filter((d) => d.sheetName !== 'Outputs')
-  const ingredientsArray = [
-    ...new Set(ingredients.map((d) => d.children?.map((d) => d['name'])).flat())
-  ]
-  const outputArray = outputs?.children?.map((d) => d['Output Name'])
-  const allIngredients: string[] = []
+  const outputs = data.find((d) => d.sheetName === 'Demand')
+  const ingredients = data.find((d) => d.sheetName === 'Supply')
+  const ingredientsArray = ingredients?.children?.map((d) => d['Entry Name']) ?? []
+  const outputArray = outputs?.children?.map((d) => d['Entry Name'])
+  const allIngredients =  outputs?.children?.map((d)=> (d as Demand)['Ingredients']?.split(';').map((i) => i.trim())).flat() ?? []
+
   const links = outputs?.children?.map((d) => {
-    const keys = Object.keys(d)
-    const regex = /Ingredient \d+ Name/
-    const ingredientKeys = keys.filter((k) => regex.test(k))
-    const ingredientValues: string[] = ingredientKeys.map((k) => d[k].toString())
-    allIngredients.push(...ingredientValues)
-    const ingredientNames = ingredientValues.filter((d) => d)
-    const ingredientIndices = ingredientNames.map((d) => ingredientsArray?.indexOf(d))
-    const outputIndex = outputArray?.indexOf(d['Output Name'])
+    const ingredientNames = allIngredients.filter(Boolean);
+
+    const ingredientIndices = ingredientNames.map((d) => ingredientsArray?.indexOf(d ?? ''))
+    .filter((index) => index !== -1);
+    const outputIndex = outputArray?.indexOf(d['Entry Name'])
     const ingredientIndicesFiltered = ingredientIndices?.filter((d) => d !== -1)
     const links = ingredientIndicesFiltered?.map((d) => {
       return {
@@ -56,7 +52,8 @@ const getIngredients = (data: SoilSisters[]) => {
   })
 
   const counts = allIngredients.reduce(
-    (acc, curr) => {
+    (acc, curr) => { 
+      if (curr)
       acc[curr] = (acc[curr] || 0) + 1
       return acc
     },
@@ -74,12 +71,12 @@ const getIngredients = (data: SoilSisters[]) => {
   return { links: linksFlat, nodes }
 }
 
-const isIngredients = (data: SoilSister[]): SoilSister[] => {
-  return data.map((d) => d.ingredient === 'TRUE' ? d : null).filter((d): d is SoilSister => d !== null);
+const isIngredients = (data: SoilSisters[]): Supply[] => {
+  return data.filter((d) => d.sheetName === 'Supply').flatMap((d) => d.children).sort((a, b) => a['Entry Name']?.localeCompare(b['Entry Name'])) as Supply[]
 }
 
-const isOutputs = (data: SoilSister[]): SoilSister[] => {
-  return data.map((d) => d.ingredient !== 'TRUE' ? d : null).filter((d): d is SoilSister => d !== null);
+const isOutputs = (data: SoilSisters[]): Demand[] => {
+  return data.filter((d) => d.sheetName === 'Demand').flatMap((d) => d.children).sort((a, b) => a['Entry Name']?.localeCompare(b['Entry Name'])) as Demand[]
 }
 
 const randomString = () => {
@@ -112,7 +109,7 @@ const handleMouseOver = (
   svgElement: SVGGElement | null = null
 ) => {
   const el = svgElement ?? event.currentTarget
-  updateLinkStyles(d.name.toString(), QuaternaryColor, linkGroups)
+  updateLinkStyles(d.name?.toString(), QuaternaryColor, linkGroups)
   updateConnectedNodeStyles(d, TertiaryColor, QuaternaryColor, 1, links, nodeGroups)
   updateNodeStyles(el, QuaternaryColor, TertiaryColor, 1)
 }
@@ -347,29 +344,38 @@ const handleSideBarEmitted = (item: any) => {
   dispatchEventToNodes(item !== null ? 'mouseover' : 'mouseout');
 };
 
+const handleCountrySelect = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  store.filterDataByCountry(target.value)
+}
 
-// onMounted(() => {
-//   if (!store.data) return
-//   const { links, nodes } = getIngredients(store.data)
-//   d3SetupWithLinks(links, nodes)
-// })
 
-// watch(
-//   () => store.data,
-//   () => {
-//     const { links, nodes } = getIngredients(store.data)
-//     d3SetupWithLinks(links, nodes)
-//   }
-// )
+onMounted(() => {
+  if (!store.data) return
+  const { links, nodes } = getIngredients(store.data)
+  d3SetupWithLinks(links, nodes)
+})
+
+watch(
+  () => store.data,
+  () => {
+    console.log('data changed')
+    const { links, nodes } = getIngredients(store.data)
+    console.log(links, nodes)
+    d3SetupWithLinks(links, nodes)
+  }
+)
 
 
 
 </script>
-
 <template>
   <main>
-    <SideBar pos="right" sheetName="Demand" :children=isIngredients(store.data[0].children) @update:selectedItem="handleSideBarEmitted" />
-    <SideBar pos="left" sheetName="Outputs" :children=isOutputs(store.data[0].children) @update:selectedItem="handleSideBarEmitted" />
+    <select @change="handleCountrySelect">
+      <option v-for="country in store.countries" :key="country" :value="country">{{ country }}</option>
+    </select>
+    <SideBar pos="left" :sheetName="store.originalData[0].sheetName"  :children=isIngredients(store.data) @update:selectedItem="handleSideBarEmitted" />
+    <SideBar pos="right" :sheetName="store.originalData[1].sheetName" :children=isOutputs(store.data) @update:selectedItem="handleSideBarEmitted" />
     <div class="wrapper">
       <div class="loading" v-if="store.isFetching">
         <h4>Loading...</h4>
@@ -383,5 +389,12 @@ const handleSideBarEmitted = (item: any) => {
 main {
   height: 100dvh;
   overflow: hidden;
+
+  select {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+  }
 }
 </style>

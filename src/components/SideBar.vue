@@ -17,7 +17,7 @@
     <div class="sidebar__list">
       <ul id="list">
         <p class="list-group-title">{{ sheetName }}</p>
-        <li v-for="d in props.children" :key="d['Entry Name']" class="list-group-item">
+        <li v-for="d in props.children" :key="d.id" class="list-group-item">
          <p class="list-sub-group-item" @click="handleClick(d)"
               @mouseover="handleMouseOver(d)"
               @mouseout="handleMouseOut()">
@@ -31,7 +31,7 @@
 
 <script setup lang="ts">
 import { createLinkElement, updateImage, isUrl, updateTitle } from '@/utils/helpers'
-import type { SoilSister } from '@/stores/soilSisters';
+import type { Supply, Demand } from '@/stores/soilSisters';
 import { ref, onMounted } from 'vue'
 
 const props = defineProps({
@@ -40,7 +40,7 @@ const props = defineProps({
     required: true,
   },
   children: {
-    type: Array as () => SoilSister[],
+    type: Array as () => Array<Supply | Demand>,
     required: true,
   },
   pos: {
@@ -64,7 +64,7 @@ const handleClosingDetails = () => {
   emit('update:selectedItem', null)
 }
 
-const updateDetails = (item: SoilSister, detailsWrapper: HTMLElement) => {
+const updateDetails = (item: (Supply | Demand), detailsWrapper: HTMLElement) => {
   const ignoreKeys = ['Image Link', 'Entry Name',]
   detailsWrapper.innerHTML = ''
 
@@ -83,7 +83,7 @@ const updateDetails = (item: SoilSister, detailsWrapper: HTMLElement) => {
   })
 }
 
-const handleClick = (item: SoilSister) => {
+const handleClick = (item: (Supply | Demand)) => {
   showDetails.value = true
   itemClicked.value = true
   const titleElement = details.value!.querySelector('p.title') as HTMLElement
@@ -96,7 +96,7 @@ const handleClick = (item: SoilSister) => {
   emit('update:selectedItem', item)
 }
 
-const handleMouseOver = (item: SoilSister) => {
+const handleMouseOver = (item: (Supply | Demand)) => {
   if (!itemClicked.value)
   emit('update:selectedItem', item)
 }
@@ -116,9 +116,10 @@ onMounted(() => {
 .sidebar {
   position: fixed;
   margin: 1rem;
+  margin-top: 4rem;
   pointer-events: none;
   width: 90%;
-  height: 100%;
+  height: 90%;
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
@@ -196,17 +197,15 @@ onMounted(() => {
       &::-webkit-scrollbar {
         display: none;
       }
+      .list-group-title {
+        border-bottom: 1px solid #e5e5e5;
+        color: #bebebe;
+      }
 
       .list-group-item {
-        .list-group-title {
-          border-bottom: 1px solid #e5e5e5;
-          color: #bebebe;
-        }
-        .list-group {
-          .list-sub-group-item {
-            cursor: pointer;
-          }
-        }
+        text-transform: capitalize;
+        cursor: pointer;
+
       }
     }
   }

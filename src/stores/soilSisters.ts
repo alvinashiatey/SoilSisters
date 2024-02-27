@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { Ref } from 'vue'
 
 export const useSoilSistersStore = defineStore('soilSisters', () => {
+  const originalData = ref([]) as Ref<SoilSisters[]>
   const data = ref([]) as Ref<SoilSisters[]>
+  const countries = ref([]) as Ref<string[]>
   const isFetching = ref(false)
 
   const fetchSoilSisters = async () => {
@@ -21,17 +23,17 @@ export const useSoilSistersStore = defineStore('soilSisters', () => {
       ) {
         isFetching.value = true
         const res = JSON.parse(localStorageData)
-        data.value = res.store
+        originalData.value = res.store
         isFetching.value = false
       } else {
         isFetching.value = true
         const response = await fetch(
-          'https://script.googleusercontent.com/macros/echo?user_content_key=F_pY2IsunljaSFUFbwZdRQ1k_7K795mISBMHxjMzz-gK0d5z0gMh2HSSwmyVQ3PQS--LNgFS6LfQ3PMev_scTtgftZOjxKefm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnEYiVI3wasC6PBAMM6OO-y0CJU6yNUIMF_ReNwrgxrNvwoqjCRIuHp-tswTScVzQ9x1XItD12_1aHpeqXBpXN6GkkDeQTo-trdz9Jw9Md8uu&lib=M7rz4ZDqVlqynInh1ZuHX-Yxw7cvAI0XW'
+          'https://script.google.com/macros/s/AKfycbxgMz8-is_NUw3XiU-iHsmexZPaM9C-WucHPegjajSujbDsVUcimCZzMEaF0Ll_jQXGJw/exec'
         )
         const { data: d } = await response.json()
-        data.value = d as SoilSisters[]
+        originalData.value = d as SoilSisters[]
 
-        localStorage.setItem('soilSistersData', JSON.stringify({ store: data.value }))
+        localStorage.setItem('soilSistersData', JSON.stringify({ store: originalData.value }))
         localStorage.setItem('lastFetchTime', currentTime.toString())
 
         isFetching.value = false
@@ -41,12 +43,71 @@ export const useSoilSistersStore = defineStore('soilSisters', () => {
     }
   }
 
-  return { data, isFetching, fetchSoilSisters }
+  const getCountries = () => {
+    const c = new Set<string>()
+    if (originalData.value.length === 0) return
+    originalData.value.forEach((sheet) => {
+      sheet.children.forEach((item) => {
+        item.Country && c.add(item.Country)
+      })
+    })
+    countries.value = Array.from(c)
+    return countries.value
+  }
+
+  const generateUUID = (): string => {
+    const hexDigits = '0123456789abcdef'
+    let uuid = ''
+    for (let i = 0; i < 36; i++) {
+      if (i === 8 || i === 13 || i === 18 || i === 23) {
+        uuid += '-'
+      } else {
+        uuid += hexDigits.substring(
+          Math.floor(Math.random() * 16),
+          Math.floor(Math.random() * 16) + 1
+        )
+      }
+    }
+    return uuid
+  }
+
+  const filterDataByCountry = (country: string) => {
+    data.value = originalData.value.map((sheet) => ({
+      sheetName: sheet.sheetName,
+      children: sheet.children.reduce((filtered: Array<Supply | Demand>, item) => {
+        if (item.Country === country) {
+          filtered.push({ ...item, id: generateUUID() })
+        }
+        return filtered
+      }, [])
+    }))
+  }
+
+  const initializeData = () => {
+    if (originalData.value.length > 0) {
+      getCountries()
+      filterDataByCountry(countries.value[1])
+    }
+  }
+
+  watch(originalData, () => {
+    initializeData()
+  })
+
+  return {
+    data,
+    originalData,
+    isFetching,
+    countries,
+    fetchSoilSisters,
+    getCountries,
+    filterDataByCountry
+  }
 })
 
 export interface SoilSisters {
   sheetName: string
-  children: Array<SoilSister>
+  children: Array<Supply | Demand>
 }
 
 export interface SoilSister {
@@ -61,4 +122,36 @@ export interface SoilSister {
   Processes?: string
   Recipe?: string
   'Image Link'?: string
+}
+
+export interface Supply {
+  id?: string
+  'Entry Name': string
+  Country: string
+  'FAO Crop Yield (2022), (g\\ha)': string
+  'Regenerative Farming Group': string
+  'Image Link': string
+  ingredient: string
+  'Material Bank': string
+  'Non-Toxic Circular': string
+  'Carbon Sink ': string
+  'Regenerative Farming': string
+}
+
+export interface Demand {
+  id?: string
+  'Entry Name': string
+  Country: string
+  'Material Bank': string
+  'Non-Toxic Circular': string
+  'Carbon Sink ': string
+  'Regenerative Farming': string
+  'Image Link': string
+  ingredient: string
+  'Structure ': string
+  Skin: string
+  'Stuff ': string
+  Ingredients?: string
+  Processes?: string
+  Recipe?: string
 }

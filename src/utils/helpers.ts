@@ -1,4 +1,4 @@
-import type { SoilSister } from '@/stores/soilSisters'
+import type { Demand, Supply } from '@/stores/soilSisters'
 
 function convertDriveLinkToDirectLink(driveLink: string) {
   if (driveLink.includes('drive.google.com')) {
@@ -17,11 +17,11 @@ const createLinkElement = (url: string) => {
   return a
 }
 
-const updateTitle = (item: SoilSister, titleElement: HTMLElement) => {
+const updateTitle = (item: Supply | Demand, titleElement: HTMLElement) => {
   titleElement.innerText = String(item['Entry Name'])
 }
 
-const updateImage = (item: SoilSister, imageElement: HTMLElement) => {
+const updateImage = (item: Supply | Demand, imageElement: HTMLElement) => {
   const imageUrl = item['Image Link']
   if (imageUrl) {
     imageElement.setAttribute('src', convertDriveLinkToDirectLink(String(imageUrl)))
