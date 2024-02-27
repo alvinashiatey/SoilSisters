@@ -383,9 +383,11 @@ watch(
 </script>
 <template>
   <main>
-    <select @change="handleCountrySelect">
-      <option v-for="country in store.countries" :key="country" :value="country">{{ country }}</option>
-    </select>
+    <div class="select-dropdown">
+      <select @change="handleCountrySelect">
+        <option v-for="country in store.countries" :key="country" :value="country">{{ country }}</option>
+      </select>
+    </div>
     <SideBar pos="left" :sheetName="store.originalData[0].sheetName"  :children=isIngredients(store.data) @update:selectedItem="handleSideBarEmitted" />
     <SideBar pos="right" :sheetName="store.originalData[1].sheetName" :children=isOutputs(store.data) @update:selectedItem="handleSideBarEmitted" />
     <div class="wrapper">
@@ -402,11 +404,47 @@ main {
   height: 100dvh;
   overflow: hidden;
 
-  select {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 100;
-  }
+  .select-dropdown,
+.select-dropdown * {
+	
+	padding: 0;
+	position: relative;
+	box-sizing: border-box;
+  width: 15rem;
+}
+.select-dropdown {
+  margin: 1rem;
+  margin-top: 3rem;
+	position: absolute;
+	background-color: #51834315;
+	border-radius: 4px;
+}
+.select-dropdown select {
+	font-size: 1rem;
+	font-weight: normal;
+	max-width: 100%;
+	padding: 8px 24px 8px 10px;
+	border: none;
+	background-color: transparent;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+	appearance: none;
+}
+.select-dropdown select:active, .select-dropdown select:focus {
+	outline: none;
+	box-shadow: none;
+}
+.select-dropdown:after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: 8px;
+	width: 0;
+	height: 0;
+	margin-top: -2px;
+	border-top: 5px solid #aaa;
+	border-right: 5px solid transparent;
+	border-left: 5px solid transparent;
+}
 }
 </style>
