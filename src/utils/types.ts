@@ -1,3 +1,5 @@
+import type { Demand, Supply } from '@/stores/soilSisters'
+
 export interface Output {
   [key: string]: string | number
 }
@@ -12,22 +14,24 @@ export interface NetworkData {
   links: Link[]
 }
 
-export interface Node {
+export interface Link {
   id: string
-  type: string
+  source: number
+  target: number | undefined
+  from: string | number
+  to: string | number
+}
+
+export type CategoryKey = keyof Supply | keyof Demand
+
+export interface Node {
+  name: string | number
+  amount?: number
+  fao?: number
   x?: number
   y?: number
-}
-
-export interface Link {
-  source: Node | string
-  target: Node | string
-  type?: string
-}
-
-export interface NetworkData {
-  nodes: Node[]
-  links: Link[]
+  type: string
+  data?: Supply | Demand | undefined
 }
 
 export interface SoilSisters {

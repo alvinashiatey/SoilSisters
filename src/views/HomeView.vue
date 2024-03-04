@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { watch, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as d3 from 'd3'
+import type { Selection, BaseType } from 'd3'
 import { useSoilSistersStore } from '@/stores/soilSisters'
 import type { SoilSisters, SoilSister, Supply, Demand } from '@/stores/soilSisters'
-import { watch, onMounted, ref } from 'vue'
-import type { Selection, BaseType } from 'd3'
+import type { Link, Node } from '@/utils/types'
+import {generateOverlayContent, mapRange, randomString} from '@/utils/helpers'
 import plantIcon from '@/assets/icons/Plants-02.svg'
 import outputIcon from '@/assets/icons/Fungi-02.svg'
 import SideBar from '@/components/SideBar.vue'
@@ -25,7 +27,7 @@ store.fetchSoilSisters()
 
 const router = useRouter()
 
-const getIngredients = (data: SoilSisters[]) => {
+const getIngredients = (data: SoilSisters[]): {links: Link[]|undefined, nodes: Node[]|undefined}=> {
   const outputs = data.find((d) => d.sheetName === 'Demand')
   const ingredients = data.find((d) => d.sheetName === 'Supply')
   const ingredientsArray = ingredients?.children?.map((d) => d['Entry Name']) ?? []
@@ -67,7 +69,8 @@ const getIngredients = (data: SoilSisters[]) => {
     name: d,
     amount: counts[d] ?? 0,
     fao: parseInt(ingredientsArray.includes(d) ? (ingredients?.children?.find((i) => (i as Supply)['Entry Name'] === d) as Supply)?.FAO : (outputs?.children?.find((i) => i['Entry Name'] === d) as Supply)?.FAO),
-    type: ingredientsArray.includes(d) ? 'ingredient' : 'output'
+    type: ingredientsArray.includes(d) ? 'ingredient' : 'output',
+    data: ingredientsArray.includes(d) ? ingredients?.children?.find((i) => (i as Supply)['Entry Name'] === d) : outputs?.children?.find((i) => i['Entry Name'] === d)
   }))
   return { links: linksFlat, nodes }
 }
@@ -80,31 +83,7 @@ const isOutputs = (data: SoilSisters[]): Demand[] => {
   return data.filter((d) => d.sheetName === 'Demand').flatMap((d) => d.children).sort((a, b) => a['Entry Name']?.localeCompare(b['Entry Name'])) as Demand[]
 }
 
-const randomString = () => {
-  const r = Math.random().toString(36).substring(2, 15) + new Date().getTime().toString(36)
-  return r.replace(/\d/g, '')
-}
-
-const mapRange = (value: number, x1: number, y1: number, x2: number, y2: number) => {
-  return ((value - x1) * (y2 - x2)) / (y1 - x1) + x2
-}
-
-interface Link {
-  id: string
-  source: number
-  target: number | undefined
-  from: string | number
-  to: string | number
-}
-
-interface Node {
-  name: string | number
-  amount?: number
-  fao?: number
-  x?: number
-  y?: number
-  type: string
-}
+let overlayDiv: HTMLDivElement | null = null
 
 const handleMouseOver = (
   event: MouseEvent,
@@ -118,6 +97,7 @@ const handleMouseOver = (
   updateLinkStyles(d.name?.toString(), QuaternaryColor, linkGroups)
   updateConnectedNodeStyles(d, TertiaryColor, QuaternaryColor, 1, links, nodeGroups)
   updateNodeStyles(el, QuaternaryColor, TertiaryColor, 1)
+  overlayDiv = generateOverlayContent(event, d)
 }
 
 const handleMouseOut = (
@@ -132,6 +112,7 @@ const handleMouseOut = (
   updateLinkStyles(null, 'none', linkGroups)
   updateConnectedNodeStyles(d, PrimaryColor, SecondaryColor, 0, links, nodeGroups)
   updateNodeStyles(el, SecondaryColor, PrimaryColor, 0)
+  if (overlayDiv) overlayDiv.remove()
 }
 
 const getConnectedNodes = (
@@ -191,8 +172,8 @@ const updateNodeStyles = (
   d3.select(target).select('text').attr('opacity', textOpacity)
 }
 
-const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[]) => {
-  if (!links) return
+const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[] | undefined) => {
+  if (!links || !nodes) return
   // linksRef.value = links
   const width = window.innerWidth,
     height = window.innerHeight
@@ -374,7 +355,6 @@ watch(
   () => store.data,
   () => {
     const { links, nodes } = getIngredients(store.data)
-    console.log(links, nodes)
     d3SetupWithLinks(links, nodes)
   }
 )

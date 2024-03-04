@@ -1,4 +1,5 @@
 import type { Demand, Supply } from '@/stores/soilSisters'
+import type { Node, CategoryKey } from '@/utils/types'
 
 function convertDriveLinkToDirectLink(driveLink: string) {
   if (driveLink.includes('drive.google.com')) {
@@ -72,11 +73,88 @@ const updateDetails = (item: Supply | Demand, detailsWrapper: HTMLElement) => {
   })
 }
 
+const generateImage = (node: Node) => {
+  const img = document.createElement('img')
+  img.src = node.data?.['Image Link'] ?? ''
+  img.alt = String(node.name) ?? ''
+  img.className = 'overlay-image'
+  return img
+}
+
+const generateProductCategory = (node: Node) => {
+  const catDiv = document.createElement('div')
+  catDiv.className = 'product-category'
+  const categories: CategoryKey[] = [
+    'Non-Toxic Circular',
+    'Carbon Sink',
+    'Regenerative Farming',
+    'Material Bank'
+  ]
+  categories.forEach((cat) => {
+    if (node.data && (node.data as Record<CategoryKey, string>)[cat] === 'TRUE') {
+      const pDiv = document.createElement('div')
+      pDiv.classList.add('category', sluggify(cat))
+      console.log('cat', sluggify(cat))
+      const p = document.createElement('p')
+      p.innerText = cat.split(' ')[0].toUpperCase()[0] + cat.split(' ')[1].toUpperCase()[0]
+      pDiv.appendChild(p)
+      catDiv.appendChild(pDiv)
+    }
+  })
+  return catDiv
+}
+
+const sluggify = (str: string) => {
+  return str.toLowerCase().replace(/ /g, '-')
+}
+
+const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize)
+
+const generateOverlayContent = (event: MouseEvent, node: Node) => {
+  const div = document.createElement('div')
+  const target = event.target as HTMLElement
+  const targetRect = target.getBoundingClientRect()
+  const top = targetRect.top - 3 * baseFontSize
+  const left = targetRect.left + targetRect.width / 2
+
+  const imgContainer = document.createElement('div')
+  imgContainer.className = 'overlay-image-container'
+  const img = generateImage(node)
+  imgContainer.appendChild(img)
+  div.appendChild(imgContainer)
+
+  const categoryDiv = generateProductCategory(node)
+  div.appendChild(categoryDiv)
+
+  div.className = 'overlay-content'
+  div.style.top = `calc(${top}px - 3.25rem)`
+  div.style.left = `${left}px`
+  // div.innerHTML = 'Hello'
+
+  document.body.appendChild(div)
+
+  console.log('node', node)
+
+  return div
+}
+
+const mapRange = (value: number, x1: number, y1: number, x2: number, y2: number) => {
+  return ((value - x1) * (y2 - x2)) / (y1 - x1) + x2
+}
+
+const randomString = () => {
+  const r = Math.random().toString(36).substring(2, 15) + new Date().getTime().toString(36)
+  return r.replace(/\d/g, '')
+}
+
 export {
   convertDriveLinkToDirectLink,
   createLinkElement,
   updateImage,
   isUrl,
   updateTitle,
-  updateDetails
+  updateDetails,
+  generateOverlayContent,
+  mapRange,
+  randomString
 }
