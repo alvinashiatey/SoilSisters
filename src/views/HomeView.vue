@@ -32,11 +32,11 @@ const getIngredients = (data: SoilSisters[]): {links: Link[]|undefined, nodes: N
   const ingredients = data.find((d) => d.sheetName === 'Supply')
   const ingredientsArray = ingredients?.children?.map((d) => d['Entry Name']) ?? []
   const outputArray = outputs?.children?.map((d) => d['Entry Name'])
-  const allIngredients =  outputs?.children?.map((d)=> (d as Demand)['Ingredients']?.split(';').map((i) => i.trim())).flat() ?? []
+  const allIngredients =  ingredients?.children?.map((d)=> (d as Supply)['Regenerative Farming Group']?.split(';').map((i) => i.trim())).flat() ?? []
+  console.log(allIngredients.filter(Boolean))
 
   const links = outputs?.children?.map((d) => {
     const ingredientNames = allIngredients.filter(Boolean);
-
     const ingredientIndices = ingredientNames.map((d) => ingredientsArray?.indexOf(d ?? ''))
     .filter((index) => index !== -1);
     const outputIndex = outputArray?.indexOf(d['Entry Name'])
