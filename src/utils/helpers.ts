@@ -44,7 +44,7 @@ const isUrl = (value: string) => {
   }
 }
 
-const updateDetails = (item: Supply | Demand, detailsWrapper: HTMLElement) => {
+const updateDetails = (item: Supply | Demand) => {
   const ignoreKeys = [
     'Image Link',
     'Entry Name',
@@ -56,21 +56,25 @@ const updateDetails = (item: Supply | Demand, detailsWrapper: HTMLElement) => {
     'Regenerative Farming',
     'Regenerative Farming Group'
   ]
-  detailsWrapper.innerHTML = ''
+  const detailsWrapper = document.createElement('div')
+  detailsWrapper.className = 'overlay-details'
 
   Object.entries(item).forEach(([key, value]) => {
     if (!ignoreKeys.includes(key)) {
       const p = document.createElement('p')
+      const keyText = key === 'FAO' ? 'FAO Crop Yield (2022), (g/ha)' : key
       if (typeof value === 'string' && isUrl(value)) {
         const linkElement = createLinkElement(value)
-        p.innerHTML = `<span class="item__key">${key}:</span> `
+        // if key is === 'FAO' then replace the text with 'FAO Link'
+        p.innerHTML = `<span class="item__key">${keyText}:</span> `
         p.appendChild(linkElement)
       } else {
-        p.innerHTML = `<span class="item__key">${key}:</span>&nbsp<span class="detail_content">${value}</span>`
+        p.innerHTML = `<span class="item__key">${keyText}:</span>&nbsp<span class="detail_content">${value}</span>`
       }
       detailsWrapper.appendChild(p)
     }
   })
+  return detailsWrapper
 }
 
 const generateImage = (node: Node) => {
@@ -108,14 +112,10 @@ const sluggify = (str: string) => {
   return str.toLowerCase().replace(/ /g, '-')
 }
 
-const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize)
-
-const generateOverlayContent = (event: MouseEvent, node: Node) => {
+function generateOverlayContent(event: MouseEvent, node: Node) {
+  const fragment = document.createDocumentFragment()
   const div = document.createElement('div')
-  const target = event.target as HTMLElement
-  const targetRect = target.getBoundingClientRect()
-  const top = targetRect.top - 3 * baseFontSize
-  const left = targetRect.left + targetRect.width / 2
+  fragment.appendChild(div)
 
   const imgContainer = document.createElement('div')
   imgContainer.className = 'overlay-image-container'
@@ -123,17 +123,27 @@ const generateOverlayContent = (event: MouseEvent, node: Node) => {
   imgContainer.appendChild(img)
   div.appendChild(imgContainer)
 
+  const secSectionDiv = document.createElement('div')
+  secSectionDiv.className = 'overlay-section'
+  const detailsDiv = updateDetails(node.data as Supply | Demand)
+  secSectionDiv.appendChild(detailsDiv)
+
   const categoryDiv = generateProductCategory(node)
-  div.appendChild(categoryDiv)
+  secSectionDiv.appendChild(categoryDiv)
+
+  div.appendChild(secSectionDiv)
 
   div.className = 'overlay-content'
-  div.style.top = `calc(${top}px - 3.25rem)`
-  div.style.left = `${left}px`
-  // div.innerHTML = 'Hello'
+  div.style.cssText = 'visibility: hidden; position: absolute;'
 
-  document.body.appendChild(div)
+  document.body.appendChild(fragment)
 
-  console.log('node', node)
+  const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize)
+
+  const transformX = event.clientX - div.offsetWidth / 2
+  const transformY = event.clientY - div.offsetHeight - baseFontSize * 2
+  div.style.transform = `translate(${transformX}px, ${transformY}px)`
+  div.style.visibility = 'visible'
 
   return div
 }

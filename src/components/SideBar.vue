@@ -1,19 +1,5 @@
 <template>
   <div class="sidebar" ref="sidebar">
-    <div v-show="showDetails" ref="details" class="sidebar__details">
-      <button @click="handleClosingDetails">
-        <!-- svg close -->
-        <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <line x1="3" y1="3" x2="21" y2="21" stroke="#bebebe" stroke-width="2" />
-          <line x1="21" y1="3" x2="3" y2="21" stroke="#bebebe" stroke-width="2" />
-        </svg>
-      </button>
-      <p class="title"></p>
-      <div class="image__wrapper">
-        <img class="item__image" src="" alt="" lazy="loading" />
-      </div>
-      <div class="details__wrapper"></div>
-    </div>
     <div class="sidebar__list">
       <ul id="list">
         <p class="list-group-title">{{ sheetName }}</p>
@@ -30,7 +16,6 @@
 </template>
 
 <script setup lang="ts">
-import { createLinkElement, updateImage, isUrl, updateTitle, updateDetails } from '@/utils/helpers'
 import type { Supply, Demand } from '@/stores/soilSisters';
 import { ref, onMounted } from 'vue'
 
@@ -54,7 +39,6 @@ const props = defineProps({
 const emit = defineEmits(['update:selectedItem'])
 
 const sidebar = ref<HTMLElement | null>(null)
-const details = ref<HTMLElement | null>(null)
 const showDetails = ref(false)
 const itemClicked = ref(false)
 
@@ -65,15 +49,7 @@ const handleClosingDetails = () => {
 }
 
 const handleClick = (item: (Supply | Demand)) => {
-  showDetails.value = true
-  itemClicked.value = true
-  const titleElement = details.value!.querySelector('p.title') as HTMLElement
-  const imageElement = details.value!.querySelector('.item__image') as HTMLElement
-  const detailsWrapper = details.value!.querySelector('.details__wrapper') as HTMLElement
-
-  updateTitle(item, titleElement)
-  updateImage(item, imageElement)
-  updateDetails(item, detailsWrapper)
+  console.log('clicked')
   emit('update:selectedItem', item)
 }
 

@@ -1,7 +1,6 @@
 @import './base.css';
 
 #app {
-  /*max-width: 1280px;*/
   margin: 0 auto;
   font-weight: normal;
 }
@@ -14,16 +13,38 @@ a,
 
 .overlay-content {
   position: absolute;
+  width: fit-content;
+  inset: 0;
   transform: translateX(-50%);
   z-index: 1000;
   padding: 0.2rem;
   border-radius: 4px;
   display: flex;
+  gap: 0.5rem;
+  height: fit-content;
+}
+
+.overlay-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.overlay-details {
+  height: fit-content;
+  display: inline;
+  padding: 0;
+}
+
+.overlay-details span {
+  padding: 0;
+  font-size: 0.8rem;
 }
 
 .overlay-image-container {
-  width: 5rem;
-  height: 5rem;
+  width: 10rem;
+  height: 10rem;
   background-color: beige;
 }
 
@@ -36,9 +57,7 @@ a,
 
 .product-category {
   display: flex;
-  justify-content: space-between;
   align-items: end;
-  padding-inline: 0.5rem;
   font-weight: bold;
   gap: 0.5rem;
 }
