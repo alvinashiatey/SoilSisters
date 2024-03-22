@@ -111,40 +111,67 @@ const sluggify = (str: string) => {
   return str.toLowerCase().replace(/ /g, '-')
 }
 
-function generateOverlayContent(event: MouseEvent, node: Node) {
-  const fragment = document.createDocumentFragment()
+function createDivElement(className = ''): HTMLDivElement {
   const div = document.createElement('div')
-  fragment.appendChild(div)
+  if (className) div.className = className
+  return div
+}
 
-  const imgContainer = document.createElement('div')
-  imgContainer.className = 'overlay-image-container'
-  const img = generateImage(node)
+function appendToParent(parent: HTMLElement, child: HTMLElement): HTMLElement {
+  parent.appendChild(child)
+  return parent // Enable chaining
+}
+
+function createImgContainer(node: Node): HTMLDivElement {
+  const imgContainer = createDivElement('overlay-image-container')
+  const img = generateImage(node) // Assuming this function exists
   imgContainer.appendChild(img)
-  div.appendChild(imgContainer)
+  return imgContainer
+}
 
-  const secSectionDiv = document.createElement('div')
-  secSectionDiv.className = 'overlay-section'
-  const detailsDiv = updateDetails(node.data as Supply | Demand)
-  secSectionDiv.appendChild(detailsDiv)
+function createSectionDiv(node: Node): HTMLDivElement {
+  const sectionDiv = createDivElement('overlay-section')
+  const detailsDiv = updateDetails(node.data as Supply | Demand) // Assuming this function exists
+  const categoryDiv = generateProductCategory(node) // Assuming this function exists
+  sectionDiv.appendChild(detailsDiv)
+  sectionDiv.appendChild(categoryDiv)
+  return sectionDiv
+}
 
-  const categoryDiv = generateProductCategory(node)
-  secSectionDiv.appendChild(categoryDiv)
-
-  div.appendChild(secSectionDiv)
-
-  div.className = 'overlay-content'
-  div.style.cssText = 'visibility: hidden; position: absolute;'
-
-  document.body.appendChild(fragment)
-
+function setPosition(div: HTMLDivElement, event: MouseEvent, node: Node): void {
   const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize)
+  let x: number, y: number
 
-  const transformX = event.clientX - div.offsetWidth / 2
-  const transformY = event.clientY - div.offsetHeight - baseFontSize * 2
+  if (event.clientX && event.clientY) {
+    x = event.clientX
+    y = event.clientY
+  } else {
+    const windowCenterX = window.innerWidth / 2
+    const windowCenterY = window.innerHeight / 2
+
+    x = windowCenterX ?? node.x ?? 0
+    y = windowCenterY ?? node.y ?? 0
+  }
+
+  const transformX = x - div.offsetWidth / 2
+  const transformY = y - div.offsetHeight - baseFontSize * 2
   div.style.transform = `translate(${transformX}px, ${transformY}px)`
   div.style.visibility = 'visible'
+}
 
-  return div
+function generateOverlayContent(event: MouseEvent, node: Node): HTMLDivElement {
+  const fragment = document.createDocumentFragment()
+  const overlayContent = createDivElement('overlay-content')
+  overlayContent.style.cssText = 'visibility: hidden; position: absolute;'
+
+  appendToParent(overlayContent, createImgContainer(node))
+  appendToParent(overlayContent, createSectionDiv(node))
+  fragment.appendChild(overlayContent)
+  document.body.appendChild(fragment)
+
+  setPosition(overlayContent, event, node)
+
+  return overlayContent
 }
 
 const mapRange = (value: number, x1: number, y1: number, x2: number, y2: number) => {
@@ -156,10 +183,16 @@ const randomString = () => {
   return r.replace(/\d/g, '')
 }
 
+const generateUUID = (): string => {
+  const uuidArray = window.crypto.getRandomValues(new Uint8Array(16))
+  return 'ss-' + Array.from(uuidArray, (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
 export {
   convertDriveLinkToDirectLink,
   createLinkElement,
   updateImage,
+  generateUUID,
   isUrl,
   updateTitle,
   updateDetails,

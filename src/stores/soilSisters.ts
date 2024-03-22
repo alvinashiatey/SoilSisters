@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import type { Ref } from 'vue'
+import { generateUUID } from '@/utils/helpers'
 
 export const useSoilSistersStore = defineStore('soilSisters', () => {
   const originalData = ref([]) as Ref<SoilSisters[]>
@@ -53,22 +54,6 @@ export const useSoilSistersStore = defineStore('soilSisters', () => {
     })
     countries.value = Array.from(c)
     return countries.value
-  }
-
-  const generateUUID = (): string => {
-    const hexDigits = '0123456789abcdef'
-    let uuid = ''
-    for (let i = 0; i < 36; i++) {
-      if (i === 8 || i === 13 || i === 18 || i === 23) {
-        uuid += '-'
-      } else {
-        uuid += hexDigits.substring(
-          Math.floor(Math.random() * 16),
-          Math.floor(Math.random() * 16) + 1
-        )
-      }
-    }
-    return uuid
   }
 
   const filterDataByCountry = (country: string) => {

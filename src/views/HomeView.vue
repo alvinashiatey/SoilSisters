@@ -6,7 +6,12 @@ import type { Selection, BaseType } from "d3";
 import { useSoilSistersStore } from "@/stores/soilSisters";
 import type { SoilSisters, SoilSister, Supply, Demand } from "@/stores/soilSisters";
 import type { Link, Node } from "@/utils/types";
-import { generateOverlayContent, mapRange, randomString } from "@/utils/helpers";
+import {
+  generateOverlayContent,
+  mapRange,
+  randomString,
+  generateUUID,
+} from "@/utils/helpers";
 import plantIcon from "@/assets/icons/Plants-02.svg";
 import outputIcon from "@/assets/icons/Fungi-02.svg";
 import SideBar from "@/components/SideBar.vue";
@@ -19,8 +24,6 @@ const QuaternaryColor = "#73D3CB";
 const nodeGroupsRef = ref<any | null>(null);
 const svgRef = ref<any | null>(null);
 const zoomRef = ref<any | null>(null);
-// const linkGroupsRef = ref<any | null>(null)
-// const linksRef = ref<Link[] | null>(null)
 
 const store = useSoilSistersStore();
 store.fetchSoilSisters();
@@ -70,6 +73,7 @@ const getIngredients = (
   const combinedArray = [...(ingredientsArray ?? []), ...(outputArray ?? [])];
   const nodes = combinedArray.map((d) => ({
     name: d,
+    id: generateUUID(),
     amount: counts[d] ?? 0,
     fao: parseInt(
       ingredientsArray.includes(d)
@@ -110,6 +114,7 @@ const handleMouseOver = (
   linkGroups: d3.Selection<SVGGElement, unknown, HTMLElement, any>,
   svgElement: SVGGElement | null = null
 ) => {
+  resetNodeStyles(nodeGroups, linkGroups);
   const el = svgElement ?? event.currentTarget;
   updateLinkStyles(d.name?.toString(), QuaternaryColor, linkGroups);
   updateConnectedNodeStyles(d, TertiaryColor, QuaternaryColor, 1, links, nodeGroups);
@@ -117,19 +122,22 @@ const handleMouseOver = (
   overlayDiv = generateOverlayContent(event, d);
 };
 
-const handleMouseOut = (
-  event: MouseEvent,
-  d: Node,
-  links: Link[],
+const resetNodeStyles = (
   nodeGroups: Selection<SVGGElement | BaseType, Node, SVGGElement, unknown>,
-  linkGroups: d3.Selection<SVGGElement, unknown, HTMLElement, any>,
-  svgElement: SVGGElement | null = null
+  linkGroups: d3.Selection<SVGGElement, unknown, HTMLElement, any>
 ) => {
-  const el = svgElement ?? event.currentTarget;
-  updateLinkStyles(null, "none", linkGroups);
-  updateConnectedNodeStyles(d, PrimaryColor, SecondaryColor, 0, links, nodeGroups);
-  updateNodeStyles(el, SecondaryColor, PrimaryColor, 0);
   if (overlayDiv) overlayDiv.remove();
+  nodeGroups.selectAll(".node__circle").attr("fill", SecondaryColor);
+  nodeGroups.selectAll(".node__center").attr("fill", PrimaryColor);
+  nodeGroups.selectAll("text").attr("opacity", 0);
+  linkGroups.selectAll("path").style("stroke", "none");
+};
+
+const handleMouseOut = (
+  nodeGroups: Selection<SVGGElement | BaseType, Node, SVGGElement, unknown>,
+  linkGroups: d3.Selection<SVGGElement, unknown, HTMLElement, any>
+) => {
+  resetNodeStyles(nodeGroups, linkGroups);
 };
 
 const getConnectedNodes = (
@@ -172,12 +180,6 @@ const updateConnectedNodeStyles = (
   connectedNodes.select(".node__center").attr("fill", centerFill);
   connectedNodes.select(".node__circle").attr("fill", circleFill);
   connectedNodes.select("text").attr("opacity", textOpacity);
-};
-
-const restartSimulation = (
-  simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
-) => {
-  simulation.alpha(0).restart();
 };
 
 const updateNodeStyles = (
@@ -226,7 +228,9 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[] | undefined) 
     .data(nodes)
     .join("g")
     .attr("class", "node")
+    .attr("data-node-id", (d) => d.id?.toString())
     .attr("data-name", (d) => d.name?.toString());
+
   nodeGroupsRef.value = nodeGroups;
   // linkGroupsRef.value = linkGroups
 
@@ -271,9 +275,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[] | undefined) 
     .on("mouseover", (event, d) =>
       handleMouseOver(event, d, links, nodeGroups, linkGroups)
     )
-    .on("mouseout", (event, d) =>
-      handleMouseOut(event, d, links, nodeGroups, linkGroups)
-    );
+    .on("mouseout", () => handleMouseOut(nodeGroups, linkGroups));
 
   const maxFao = d3.max(nodes, (d) => d.fao) ?? 500000;
 
@@ -321,6 +323,7 @@ const d3SetupWithLinks = (links: Link[] | undefined, nodes: Node[] | undefined) 
 };
 
 const handleSideBarEmitted = (item: Supply | Demand, type: string) => {
+  console.log(type);
   const zoomToNode = (node: SVGGElement) => {
     // @ts-ignore
     const { x, y } = d3.select(node).datum();

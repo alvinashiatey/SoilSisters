@@ -25,6 +25,7 @@ export interface Link {
 export type CategoryKey = keyof Supply | keyof Demand
 
 export interface Node {
+  id: string
   name: string | number
   amount?: number
   fao?: number

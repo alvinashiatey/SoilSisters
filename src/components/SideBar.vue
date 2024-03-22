@@ -38,6 +38,7 @@ const emit = defineEmits(["update:selectedItem"]);
 const sidebar = ref<HTMLElement | null>(null);
 
 const handleClick = (item: Supply | Demand) => {
+  console.log(isSupply(item));
   if (isSupply(item)) {
     emit("update:selectedItem", item, "supply");
   } else if (!isSupply(item)) {
