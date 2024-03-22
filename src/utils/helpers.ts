@@ -79,8 +79,8 @@ const updateDetails = (item: Supply | Demand) => {
 
 const generateImage = (node: Node) => {
   const img = document.createElement('img')
-  img.src = node.data?.['Image Link'] ?? ''
-  img.alt = String(node.name) ?? ''
+  img.src = convertDriveLinkToDirectLink(node.data?.['Image Link'] ?? '')
+  img.alt = String(node.name ?? '')
   img.className = 'overlay-image'
   return img
 }
@@ -98,7 +98,6 @@ const generateProductCategory = (node: Node) => {
     if (node.data && (node.data as Record<CategoryKey, string>)[cat] === 'TRUE') {
       const pDiv = document.createElement('div')
       pDiv.classList.add('category', sluggify(cat))
-      console.log('cat', sluggify(cat))
       const p = document.createElement('p')
       p.innerText = cat.split(' ')[0].toUpperCase()[0] + cat.split(' ')[1].toUpperCase()[0]
       pDiv.appendChild(p)

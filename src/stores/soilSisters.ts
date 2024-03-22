@@ -155,3 +155,11 @@ export interface Demand {
   Processes?: string
   Recipe?: string
 }
+
+export const isSupply = (item: Supply | Demand): item is Supply => {
+  return 'FAO' in item
+}
+
+export const isDemand = (item: Supply | Demand): item is Demand => {
+  return 'Structure ' in item
+}

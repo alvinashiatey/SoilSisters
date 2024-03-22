@@ -4,11 +4,9 @@
       <ul id="list">
         <p class="list-group-title">{{ sheetName }}</p>
         <li v-for="d in props.children" :key="d.id" class="list-group-item">
-         <p class="list-sub-group-item" @click="handleClick(d)"
-              @mouseover="handleMouseOver(d)"
-              @mouseout="handleMouseOut()">
-            {{ d['Entry Name'] }}
-         </p>
+          <p class="list-sub-group-item" @click="handleClick(d)">
+            {{ d["Entry Name"] }}
+          </p>
         </li>
       </ul>
     </div>
@@ -16,8 +14,9 @@
 </template>
 
 <script setup lang="ts">
-import type { Supply, Demand } from '@/stores/soilSisters';
-import { ref, onMounted } from 'vue'
+import { type Supply, type Demand, isSupply } from "@/stores/soilSisters";
+
+import { ref, onMounted } from "vue";
 
 const props = defineProps({
   sheetName: {
@@ -31,42 +30,26 @@ const props = defineProps({
   pos: {
     type: String,
     required: true,
+  },
+});
+
+const emit = defineEmits(["update:selectedItem"]);
+
+const sidebar = ref<HTMLElement | null>(null);
+
+const handleClick = (item: Supply | Demand) => {
+  if (isSupply(item)) {
+    emit("update:selectedItem", item, "supply");
+  } else if (!isSupply(item)) {
+    emit("update:selectedItem", item, "demand");
   }
-})
-
-
-
-const emit = defineEmits(['update:selectedItem'])
-
-const sidebar = ref<HTMLElement | null>(null)
-const showDetails = ref(false)
-const itemClicked = ref(false)
-
-const handleClosingDetails = () => {
-  showDetails.value = false
-  itemClicked.value = false
-  emit('update:selectedItem', null)
-}
-
-const handleClick = (item: (Supply | Demand)) => {
-  console.log('clicked')
-  emit('update:selectedItem', item)
-}
-
-const handleMouseOver = (item: (Supply | Demand)) => {
-  if (!itemClicked.value)
-  emit('update:selectedItem', item)
-}
-
-const handleMouseOut = () => {
-  if (!itemClicked.value)
-  emit('update:selectedItem', null)
-}
+};
 
 onMounted(() => {
-  props.pos === 'right' ? sidebar.value?.classList.add('right') : sidebar.value?.classList.add('left')
-})
-
+  props.pos === "right"
+    ? sidebar.value?.classList.add("right")
+    : sidebar.value?.classList.add("left");
+});
 </script>
 
 <style lang="scss" scoped>
@@ -162,7 +145,13 @@ onMounted(() => {
       .list-group-item {
         text-transform: capitalize;
         cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.455, 0.03, 0.515, 0.955);
 
+        &:hover {
+          background-color: #51834325;
+          padding-block: 0.15rem;
+          padding-inline-start: 0.5rem;
+        }
       }
     }
   }
